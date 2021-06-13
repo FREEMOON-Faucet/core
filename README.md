@@ -1,2 +1,1 @@
-# FREEMOON-Faucet
-Brand assets
+# The FREEMOON Faucet - Money on Tap
