@@ -16,12 +16,13 @@ contract Faucet {
 
     uint256 constant TO_WEI = 10 ** 18;
 
-    uint256 subscriptionCost;
-    uint256 cooldown;
-    uint256 payoutThreshold;
-    uint256 currentPayout;
+    // Settings
+    uint256 public subscriptionCost;
+    uint256 public cooldownTime;
+    uint256 public payoutThreshold;
+    uint256 public payoutAmount;
 
-    mapping(address => bool) public subscribed;
+    mapping(address => bool) public isSubscribed;
     mapping(address => uint256) public previousEntry;
     mapping(address => uint256) public payoutStatus;
 
@@ -45,21 +46,21 @@ contract Faucet {
      *
      * @param _governance The governance address, used to vote for updating the contract and its parameters.
      * @param _subscriptionCost The cost of subscribing in FSN.
-     * @param _cooldown The time in seconds an address has to wait before entering the FREEMOON draw again.
+     * @param _cooldownTime The time in seconds an address has to wait before entering the FREEMOON draw again.
      * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
-     * @param _currentPayout The current amount of FREE payed to addresses who claim.
+     * @param _payoutAmount The current amount of FREE payed to addresses who claim.
      * @param _categories A list of the balances required to qualify for each category.
      * @param _odds A list of odds of winning for each balance category.
      */
-    constructor(address _governance, uint256 _subscriptionCost, uint256 _cooldown, uint256 _payoutThreshold, uint256 _currentPayout, uint256[7] memory _categories, uint256[7] memory _odds) {
+    constructor(address _governance, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount, uint256[] memory _categories, uint256[] memory _odds) {
         owner = msg.sender;
         governance = _governance;
         subscriptionCost = _subscriptionCost;
-        cooldown = _cooldown;
+        cooldownTime = _cooldownTime;
         payoutThreshold = _payoutThreshold;
-        currentPayout = _currentPayout;
+        payoutAmount = _payoutAmount;
 
-        for(uint8 ii = 0; ii <= 7; ii++) {
+        for(uint8 ii = 0; ii <= _categories.length; ii++) {
             categories[ii] = _categories[ii];
             odds[ii] = _odds[ii];
         }
@@ -88,8 +89,8 @@ contract Faucet {
      */
     function subscribe(address _account) public payable {
         require(msg.value == subscriptionCost, "FREEMOON: Invalid FSN amount for number of addresses being subscribed.");
-        require(!subscribed[_account], "FREEMOON: Given address is already subscribed.");
-        subscribed[_account] = true;
+        require(!isSubscribed[_account], "FREEMOON: Given address is already subscribed.");
+        isSubscribed[_account] = true;
     }
 
     /**
@@ -98,15 +99,15 @@ contract Faucet {
      * @param _entrant The address to enter, they must be subscribed to the faucet.
      */
     function enter(address _entrant) public {
-        require(subscribed[_entrant], "FREEMOON: Only subscribed addresses can enter the draw.");
-        require(previousEntry[_entrant] + cooldown <= block.timestamp, "FREEMOON: You must wait for your cooldown to end before entering again.");
+        require(isSubscribed[_entrant], "FREEMOON: Only subscribed addresses can enter the draw.");
+        require(previousEntry[_entrant] + cooldownTime <= block.timestamp, "FREEMOON: You must wait for your cooldown to end before entering again.");
 
         uint8 lottery = getLottery(_entrant);
         previousEntry[_entrant] = block.timestamp;
 
         if(getPayoutStatus(_entrant)) {
             payoutStatus[_entrant] = 0;
-            free.transfer(_entrant, currentPayout);
+            free.transfer(_entrant, payoutAmount);
         } else {
             payoutStatus[_entrant]++;
         }
