@@ -10,7 +10,7 @@ import "../FRC758/FRC758.sol";
  */
 contract FREE is FRC758 {
 
-    uint256 public constant INITIAL_SUPPLY = 100000000; // One Hundred Million
+    uint256 constant INITIAL_SUPPLY = 100000000; // One Hundred Million
     uint256 public circulationSupply;
     address public governance;
     address public airdrop;

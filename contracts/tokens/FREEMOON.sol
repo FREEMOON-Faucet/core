@@ -10,8 +10,8 @@ import "./../FRC758/FRC758.sol";
  */
 contract FREEMOON is FRC758 {
 
-    uint256 public immutable TO_WEI;
-    uint256 public constant INITIAL_SUPPLY = 10;
+    uint256 immutable TO_WEI;
+    uint256 constant INITIAL_SUPPLY = 10;
     uint256 public circulationSupply;
     address public governance;
     address public faucet;
