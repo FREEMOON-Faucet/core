@@ -143,6 +143,4 @@ contract Faucet {
     function getPayoutStatus(address _account) public view returns(bool) {
         return payoutStatus[_account] == payoutThreshold;
     }
-
-    function 
 }
