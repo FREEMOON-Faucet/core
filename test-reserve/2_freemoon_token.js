@@ -20,6 +20,7 @@ const fromWei = val => {
   return web3.utils.fromWei(val)
 }
 
+
 contract("FREEMOON Token", () => {
   beforeEach("Re-deploy all", async () => {
     await setUp()

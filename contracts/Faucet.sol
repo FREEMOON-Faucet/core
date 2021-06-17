@@ -10,11 +10,12 @@ contract Faucet {
     IFREE free;
     IFREEMOON freemoon;
 
-    address owner;
+    address coordinator;
     address governance;
     bool initialized;
 
     uint256 constant TO_WEI = 10 ** 18;
+    bytes32 constant MAX_VAL = bytes32(uint256(2 ** 256 - 1));
 
     // Settings
     uint256 public subscriptionCost;
@@ -38,11 +39,16 @@ contract Faucet {
      * @dev A listener for this event responds by rewarding FREEMOON to the entrant if successful in the lottery category.
      */
     event Entry(address indexed entrant, uint8 indexed lottery);
+
+    modifier onlyCoordinator {
+        require(msg.sender == coordinator, "FREEMOON: Only coordinator can call this function.");
+        _;
+    }
     
     /**
      * @notice On deployment, the initial faucet parameters are set.
-     * @notice The owner address is solely set in order to call "initialize", it is never used after that.
-     * @notice The list of odds of winning categories is initialized here, along with the list of FREE balances required to be elligible for each category.
+     * @notice The coordinator address is set in order to initialize the faucet parameters, and manage the FREEMOON lottery.
+     * @notice The list of FREE balances required to be elligible for each category is initialized here, along with the odds of winning for each category.
      *
      * @param _governance The governance address, used to vote for updating the contract and its parameters.
      * @param _subscriptionCost The cost of subscribing in FSN.
@@ -53,30 +59,29 @@ contract Faucet {
      * @param _odds A list of odds of winning for each balance category.
      */
     constructor(address _governance, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount, uint256[] memory _categories, uint256[] memory _odds) {
-        owner = msg.sender;
+        coordinator = msg.sender;
         governance = _governance;
         subscriptionCost = _subscriptionCost;
         cooldownTime = _cooldownTime;
         payoutThreshold = _payoutThreshold;
         payoutAmount = _payoutAmount;
 
-        for(uint8 ii = 0; ii <= _categories.length; ii++) {
+        for(uint8 ii = 0; ii < _categories.length; ii++) {
             categories[ii] = _categories[ii];
             odds[ii] = _odds[ii];
         }
     }
 
     /**
-     * @notice Used to set contract addresses, only callable once.
+     * @notice Used to set contract addresses, only callable once, by coordinator.
      *
      * @param _free The address of the FREE token.
      * @param _freemoon The address of the FREEMOON token.
      *
      * @dev As the FREE and FREEMOON tokens require the faucet contract's address to deploy, their addresses are set after deployment.
      */
-    function initialize(address _free, address _freemoon) public {
+    function initialize(address _free, address _freemoon) public onlyCoordinator {
         require(!initialized, "FREEMOON: Asset addresses can only ever be set once.");
-        require(msg.sender == owner, "FREEMOON: Only owner can set the FREE and FREEMOON addresses.");
         free = IFREE(_free);
         freemoon = IFREEMOON(_freemoon);
         initialized = true;
@@ -113,6 +118,11 @@ contract Faucet {
         }
 
         emit Entry(_entrant, lottery);
+    }
+
+    function checkWin(uint8 _lottery) public view onlyCoordinator returns(bytes32) {
+        bytes32 maxWinAmount = MAX_VAL;
+        return maxWinAmount;
     }
 
     /**

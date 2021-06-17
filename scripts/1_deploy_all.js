@@ -5,17 +5,7 @@ const FREEMOON = artifacts.require("FREEMOON")
 
 let owner, governance, user, airdrop
 let faucet, free, freemoon
-
-const lottery = [
-  [ "1", "0" ],
-  [ "100", "1000000000" ],
-  [ "1000", "100000000" ],
-  [ "10000", "10000000" ],
-  [ "25000", "1000000" ],
-  [ "50000", "500000" ],
-  [ "100000", "250000" ],
-  [ "100000", "100000" ]
-]
+let fromNowFiveMins, fromNowTenMins, startTime
 
 const toWei = val => {
   return web3.utils.toWei(val, "ether")
@@ -26,14 +16,51 @@ const fromWei = val => {
 }
 
 const config = () => {
+  const lottery = [
+    [ "1", "0" ],
+    [ "100", "1000000000" ],
+    [ "1000", "100000000" ],
+    [ "10000", "10000000" ],
+    [ "25000", "1000000" ],
+    [ "50000", "500000" ],
+    [ "100000", "250000" ],
+    [ "100000", "100000" ]
+  ]
+
   return {
     subscriptionCost: toWei("1"), // 1 FSN
     cooldownTime: "3600", // 1 hour
     payoutThreshold: "1", // 1 entry == receive FREE
     payoutAmount: toWei("1"), // 1 FREE
-    categories: lottery.map(cat => toWei(cat[0])), // categories for FREEMOON lottery
+    categories: lottery.map(cat => toWei(cat[0])), // balances required for each FREEMOON lottery category
     odds: lottery.map(cat => cat[1]) // odds of winning for each category
   }
+}
+
+const advanceBlockAtTime = async time => {
+  let timeResult
+  await web3.currentProvider.send(
+    {
+      jsonrpc: "2.0",
+      method: "evm_mine",
+      params: [ time ],
+      id: new Date().getTime(),
+    },
+    (error, res) => {
+      if(error) {
+        timeResult = error
+        return timeResult
+      }
+    }
+  )
+}
+
+const setTimes = async () => {
+  fromNowFiveMins = Math.floor(Date.now() / 1000) + 300
+  fromNowTenMins = Math.floor(Date.now() / 1000) + 600
+
+  startTime = await web3.eth.getBlock("latest")
+  startTime = startTime.timestamp
 }
 
 const deployFaucet = async () => {
