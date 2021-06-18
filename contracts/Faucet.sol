@@ -15,7 +15,7 @@ contract Faucet {
     bool initialized;
 
     uint256 constant TO_WEI = 10 ** 18;
-    bytes32 constant MAX_VAL = bytes32(uint256(2 ** 256 - 1));
+    uint256 public constant MAX_UINT256 = 2 ** 256 - 1;
 
     // Settings
     uint256 public subscriptionCost;
@@ -120,9 +120,14 @@ contract Faucet {
         emit Entry(_entrant, lottery);
     }
 
-    function checkWin(uint8 _lottery) public view onlyCoordinator returns(bytes32) {
-        bytes32 maxWinAmount = MAX_VAL;
-        return maxWinAmount;
+    function checkWin(uint8 _lottery, bytes32 _tx, bytes32 _block) public view onlyCoordinator returns(bool) {
+        if(odds[_lottery] == 0) {
+            return false;
+        } else {
+            uint256 maxWinAmount = MAX_UINT256 / uint256(odds[_lottery]);
+            uint256 entryValue = uint256(bytes32(keccak256(abi.encodePacked(_lottery, _tx, _block))));
+            return bool(entryValue <= maxWinAmount);
+        }
     }
 
     /**
@@ -152,6 +157,6 @@ contract Faucet {
      * @param _account The address to check.
      */
     function getPayoutStatus(address _account) public view returns(bool) {
-        return payoutStatus[_account] == payoutThreshold;
+        return payoutStatus[_account] >= payoutThreshold;
     }
 }

@@ -5,5 +5,8 @@ module.exports = {
   solidity: "0.8.5",
   networks: {
     hardhat: {}
+  },
+  mocha: {
+    timeout: 60000
   }
 };

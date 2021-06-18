@@ -21,13 +21,13 @@ const fromWei = val => {
 const config = () => {
   const lottery = [
     [ "1", "0" ],
-    [ "100", "1000000000" ],
-    [ "1000", "100000000" ],
-    [ "10000", "10000000" ],
-    [ "25000", "1000000" ],
-    [ "50000", "500000" ],
-    [ "100000", "250000" ],
-    [ "100000", "100000" ]
+    [ "100", "100000" ],
+    [ "1000", "10000" ],
+    [ "10000", "1000" ],
+    [ "25000", "100" ],
+    [ "50000", "50" ],
+    [ "100000", "25" ],
+    [ "100000", "10" ]
   ]
 
   return {
@@ -100,6 +100,22 @@ const advanceBlockAtTime = async time => {
   )
 }
 
+const testLottery = async (id, tries) => {
+  let txHash, blockHash, result
+  let wins = []
+  let losses = []
+
+  for(let i = 0; i < tries; i++) {
+    txHash = web3.utils.soliditySha3(i.toString())
+    blockHash = web3.utils.soliditySha3(txHash)
+
+    result = await faucet.checkWin(id, txHash, blockHash)
+    result ? wins.push(result) : losses.push(result)
+  }
+
+  return [ wins, losses ]
+}
+
 
 contract("Freemoon Faucet", async () => {
   beforeEach("Re-deploy all, set start time", async () => {
@@ -107,12 +123,92 @@ contract("Freemoon Faucet", async () => {
     await setTimes()
   })
 
-  it("TEST", async () => {
-    let results = []
-    for(let i = 0; i < 8; i++) {
-      const res = await faucet.checkWin(i)
-      results.push(res)
-    }
-    console.log(results)
+  it("Category zero: 0 in 1", async () => {
+    console.log("--- RANDOM NUMBER GENERATOR TESTING ---")
+
+    let txHash, blockHash, result
+
+    txHash = web3.utils.soliditySha3("test")
+    blockHash = web3.utils.soliditySha3(txHash)
+    result = await faucet.checkWin(0, txHash, blockHash)
+
+    expect(result).to.be.false
+  })
+
+  it("Category one: 1 in 1 billion (100,000 in testing)", async () => {
+    let [ wins, losses ] = await testLottery(1, 10000)
+    
+    console.log(`
+      Wins: ${wins.length}
+      Losses: ${losses.length}
+      Expected Ratio: 0.0001%
+      Actual Ratio: ${(wins.length / losses.length) * 100}%
+    `)
+  })
+
+  it("Category two: 1 in 100 million (10,000 in testing)", async () => {
+    let [ wins, losses ] = await testLottery(2, 10000)
+    
+    console.log(`
+      Wins: ${wins.length}
+      Losses: ${losses.length}
+      Expected Ratio: 0.01%
+      Actual Ratio: ${(wins.length / losses.length) * 100}%
+    `)
+  })
+
+  it("Category three: 1 in 10 million (1,000 in testing)", async () => {
+    let [ wins, losses ] = await testLottery(3, 10000)
+    
+    console.log(`
+      Wins: ${wins.length}
+      Losses: ${losses.length}
+      Expected Ratio: 0.1%
+      Actual Ratio: ${(wins.length / losses.length) * 100}%
+    `)
+  })
+
+  it("Category four: 1 in 1 million (100 in testing)", async () => {
+    let [ wins, losses ] = await testLottery(4, 10000)
+    
+    console.log(`
+      Wins: ${wins.length}
+      Losses: ${losses.length}
+      Expected Ratio: 1%
+      Actual Ratio: ${(wins.length / losses.length) * 100}%
+    `)
+  })
+
+  it("Category five: 1 in 500 thousand (50 in testing)", async () => {
+    let [ wins, losses ] = await testLottery(5, 10000)
+    
+    console.log(`
+      Wins: ${wins.length}
+      Losses: ${losses.length}
+      Expected Ratio: 2%
+      Actual Ratio: ${(wins.length / losses.length) * 100}%
+    `)
+  })
+
+  it("Category six: 1 in 250 thousand (25 in testing)", async () => {
+    let [ wins, losses ] = await testLottery(6, 10000)
+    
+    console.log(`
+      Wins: ${wins.length}
+      Losses: ${losses.length}
+      Expected Ratio: 4%
+      Actual Ratio: ${(wins.length / losses.length) * 100}%
+    `)
+  })
+
+  it("Category seven: 1 in 100 thousand (10 in testing)", async () => {
+    let [ wins, losses ] = await testLottery(7, 10000)
+    
+    console.log(`
+      Wins: ${wins.length}
+      Losses: ${losses.length}
+      Expected Ratio: 10%
+      Actual Ratio: ${(wins.length / losses.length) * 100}%
+    `)
   })
 })
