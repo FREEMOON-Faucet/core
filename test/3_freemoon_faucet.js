@@ -5,11 +5,13 @@ const Faucet = artifacts.require("Faucet")
 const FREE = artifacts.require("FREE")
 const FREEMOON = artifacts.require("FREEMOON")
 
+const ENTER = require("../scripts/99_freemoon_lottery").ENTER
+
 
 let coordinator, governance, user
 let faucet, free, freemoon
 let categories, odds
-let fromNowFiveMins, fromNowTenMins, startTime
+let fromNowOneHour, startTime, newTime
 
 const toWei = val => {
   return web3.utils.toWei(val, "ether")
@@ -85,16 +87,25 @@ const setUp = async () => {
   )
 }
 
-const setTimes = async () => {
-  fromNowFiveMins = Math.floor(Date.now() / 1000) + 300
-  fromNowTenMins = Math.floor(Date.now() / 1000) + 600
+const initialize = async () => {
+  await faucet.initialize(free.address, freemoon.address, {from: coordinator})
+}
 
+const getHashes = res => {
+  return {
+    txHash: res.receipt.transactionHash,
+    blockHash: res.receipt.blockHash
+  }
+}
+
+const setTimes = async () => {
   startTime = await web3.eth.getBlock("latest")
   startTime = startTime.timestamp
+
+  fromNowOneHour = startTime + 3605
 }
 
 const advanceBlockAtTime = async time => {
-  let timeResult
   await web3.currentProvider.send(
     {
       jsonrpc: "2.0",
@@ -102,13 +113,14 @@ const advanceBlockAtTime = async time => {
       params: [ time ],
       id: new Date().getTime(),
     },
-    (error, res) => {
-      if(error) {
-        timeResult = error
-        return timeResult
+    (err, res) => {
+      if(err) {
+        newTime = err
       }
     }
   )
+  const newBlock = await web3.eth.getBlock("latest")
+  newTime = newBlock.timestamp
 }
 
 
@@ -183,12 +195,12 @@ contract("Freemoon Faucet", async () => {
   })
 
   it("Should allow governance address to update faucet parameters", async () => {
-    await truffleAssert.passes(faucet.updateParams(toWei("2"), "86400", "24", toWei("1"), {from: governance}))
+    await truffleAssert.passes(faucet.updateParams(user, toWei("2"), "86400", "24", toWei("1"), {from: governance}))
   })
 
   it("Should not allow non-governance address to update faucet parameters", async () => {
     await truffleAssert.fails(
-      faucet.updateParams(toWei("2"), "86400", "24", toWei("1"), {from: user}),
+      faucet.updateParams(user, toWei("2"), "86400", "24", toWei("1"), {from: user}),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: Only governance votes can update the faucet parameters."
     )
@@ -196,9 +208,95 @@ contract("Freemoon Faucet", async () => {
 
 
   // SUBSCRIBING
-  it("Should allow a valid address to subscribe to faucet")
+  it("Should allow a valid address to subscribe to faucet", async () => {
+    await initialize()
+    await truffleAssert.passes(faucet.subscribe(user, {value: toWei("1")}))
+  })
 
-  it("Should not allow an address overpaying or underpaying to subscribe")
+  it("Should not allow an address overpaying or underpaying to subscribe", async () => {
+    await initialize()
 
-  it("Should not allow a subscribed address to subscribe again")
+    await truffleAssert.fails(
+      faucet.subscribe(user, {value: toWei("1.1")}),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Invalid FSN amount sent for subscription cost."
+    )
+
+    await truffleAssert.fails(
+      faucet.subscribe(user, {value: toWei("0.9")}),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Invalid FSN amount sent for subscription cost."
+    )
+  })
+
+  it("Should not allow a subscribed address to subscribe again", async () => {
+    await initialize()
+    await faucet.subscribe(user, {value: toWei("1")})
+    
+    await truffleAssert.fails(
+      faucet.subscribe(user, {value: toWei("1")}),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Given address is already subscribed."
+    )
+  })
+
+
+  // ENTERING
+  it("Should allow a subscribed address to enter at a valid time, and receive 1 FREE", async () => {
+    await initialize()
+    await faucet.subscribe(user, {value: toWei("1")})
+    const freeBalBefore = Number(fromWei(await free.balanceOf(user)))
+
+    await truffleAssert.passes(faucet.enter(user))
+    const freeBalAfter = Number(fromWei(await free.balanceOf(user)))
+    
+    expect(freeBalAfter).to.equal(freeBalBefore + 1)
+  })
+
+  it("Should emit the entry event for a valid address", async () => {
+    await initialize()
+    await faucet.subscribe(user, {value: toWei("1")})
+    const result = await faucet.enter(user)
+    expect(result.logs[0].event).to.equal("Entry")
+  })
+
+  it("Should allow an address to enter again if it has waited the required cooldown period", async () => {
+    await initialize()
+    await faucet.subscribe(user, {value: toWei("1")})
+    await faucet.enter(user)
+    await advanceBlockAtTime(fromNowOneHour)
+
+    await truffleAssert.passes(faucet.enter(user))
+  })
+
+  it("Should not allow an address to enter if it has not waited the required cooldown period", async () => {
+    await initialize()
+    await faucet.subscribe(user, {value: toWei("1")})
+    await faucet.enter(user)
+    
+    await truffleAssert.fails(
+      faucet.enter(user),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: You must wait for your cooldown to end before entering again."
+    )
+  })
+
+  it("Should not allow an unsubscribed address to enter", async () => {
+    await initialize()
+    await truffleAssert.fails(
+      faucet.enter(user),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Only subscribed addresses can enter the draw."
+    )
+  })
+
+
+  // COORDINATOR EVENT LISTENER
+  it("Should enter the entry into the draw", async () => {
+    await initialize()
+    await faucet.subscribe(user, {value: toWei("1")})
+    const { txHash, blockHash } = getHashes(await faucet.enter(user))
+
+    await ENTER(user, 1, txHash, blockHash, faucet)
+  })
 })

@@ -3,6 +3,7 @@ pragma solidity 0.8.5;
 
 import "./interfaces/IFREE.sol";
 import "./interfaces/IFREEMOON.sol";
+import "./FSNContract.sol";
 
 /**
  * @title The FREEMOON Faucet
@@ -13,7 +14,7 @@ import "./interfaces/IFREEMOON.sol";
  * @notice With every claim, the address gets entered into a lottery to win a rare FREEMOON token.
  * @notice The odds of winning this lottery are determined by FREE balance, more FREE merits increased odds of winning. 
  */
-contract Faucet {
+contract Faucet is FSNContract {
 
     IFREE free;
     IFREEMOON freemoon;
@@ -25,6 +26,8 @@ contract Faucet {
     uint256 constant TO_WEI = 10 ** 18;
     uint8 constant CATEGORIES = 8;
     uint256 constant MAX_UINT256 = 2 ** 256 - 1;
+    bytes32 constant FSN_ASSET_ID = 0xffffffffffffffffffffffffffffffffffffffff;
+    uint64 constant FOUR_MONTHS = 3600 * 24 * 31 * 4;
 
     // Configurable parameters
     uint256 public subscriptionCost;
@@ -48,6 +51,15 @@ contract Faucet {
      * @dev A listener for this event responds by rewarding FREEMOON to the entrant if successful in the lottery category.
      */
     event Entry(address indexed entrant, uint8 indexed lottery);
+
+    /**
+     * @notice Emitted when an entry is processed and the result (win or lose) is available.
+     *
+     * @param entrant The address who entered the FREEMOON draw.
+     * @param lottery The category that the address entered into.
+     * @param win The result of their entry, win or lose.
+     */
+    event Result(address indexed entrant, uint8 indexed lottery, bool win);
 
     modifier onlyCoordinator {
         require(msg.sender == coordinator, "FREEMOON: Only coordinator can call this function.");
@@ -111,15 +123,21 @@ contract Faucet {
      * @param _account The address to subscribe.
      */
     function subscribe(address _account) public payable {
-        require(msg.value == subscriptionCost, "FREEMOON: Invalid FSN amount for number of addresses being subscribed.");
+        require(msg.value == subscriptionCost, "FREEMOON: Invalid FSN amount sent for subscription cost.");
         require(!isSubscribed[_account], "FREEMOON: Given address is already subscribed.");
         isSubscribed[_account] = true;
+    }
+
+    function buyFreeWithTimelock() public payable {
+        uint64 fourMonthsFromNow = uint64(block.timestamp) + FOUR_MONTHS;
+        uint256[] memory extra;
+        _receiveAsset(FSN_ASSET_ID, 0, fourMonthsFromNow, SendAssetFlag.UseTimeLockToTimeLock, extra);
     }
 
     /**
      * @notice Enters a subscribed address into the FREEMOON draw.
      *
-     * @param _entrant The address to enter, they must be subscribed to the faucet.
+     * @param _entrant The address to enter. They must be subscribed to the faucet.
      */
     function enter(address _entrant) public {
         require(isSubscribed[_entrant], "FREEMOON: Only subscribed addresses can enter the draw.");
@@ -128,9 +146,9 @@ contract Faucet {
         uint8 lottery = getLottery(_entrant);
         previousEntry[_entrant] = block.timestamp;
 
-        if(getPayoutStatus(_entrant)) {
+        if(payoutStatus[_entrant] + 1 >= payoutThreshold) {
             payoutStatus[_entrant] = 0;
-            free.transfer(_entrant, payoutAmount);
+            free.mint(_entrant, payoutAmount);
         } else {
             payoutStatus[_entrant]++;
         }
@@ -148,24 +166,28 @@ contract Faucet {
      *
      * @dev Each time an "Entry" event is emitted, the parameters of the event get fed back into this function to check for a win.
      */
-    function enterLottery(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public onlyCoordinator {
+    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public onlyCoordinator {
         bool win = checkWin(_lottery, _tx ,_block);
         if(win) {
             _updateOdds();
             freemoon.rewardWinner(_account, _lottery);
         }
+
+        emit Result(_account, _lottery, win);
     }
     
     /**
      * @notice Update the parameters around which the faucet operates. Only possible from governance vote.
      *
+     * @param _coordinator The address of the faucet coordinator.
      * @param _subscriptionCost The cost of subscribing in FSN.
      * @param _cooldownTime The time in seconds an address has to wait before entering the FREEMOON draw again.
      * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
      * @param _payoutAmount The current amount of FREE payed to addresses who claim.
      */
-    function updateParams(uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount) public {
+    function updateParams(address _coordinator, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount) public {
         require(msg.sender == governance, "FREEMOON: Only governance votes can update the faucet parameters.");
+        coordinator = _coordinator;
         subscriptionCost = _subscriptionCost;
         cooldownTime = _cooldownTime;
         payoutThreshold = _payoutThreshold;
