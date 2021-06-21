@@ -5,7 +5,9 @@ import "../FRC758/FRC758.sol";
 
 /**
  * @title The FREE Token contract
+ *
  * @author Paddy Curé
+ *
  * @notice FREE is an FRC758 standard token.
  */
 contract FREE is FRC758 {
@@ -18,6 +20,7 @@ contract FREE is FRC758 {
 
     /**
      * @notice On deployment, the required addresses are set, and initial supply is minted.
+     *
      * @param _name The name of the token, i.e. "The FREE Token".
      * @param _symbol The symbol of the token, i.e. "FREE".
      * @param _decimals The decimals of the token, used for display puposes, i.e. 18.
@@ -35,6 +38,7 @@ contract FREE is FRC758 {
 
     /**
      * @notice Update the addresses permitted to mint FREE (airdrop and faucet). Only possible from governance vote.
+     *
      * @param _airdrop The new address for the airdrop contract.
      * @param _faucet The new address for the faucet contract.
      */
@@ -46,6 +50,7 @@ contract FREE is FRC758 {
 
     /**
      * @notice Mints FREE to given address. Only faucet contract and airdrop contract can do this.
+     *
      * @param _account The receiver of the minted tokens.
      * @param _amount The amount to mint.
      */
@@ -57,6 +62,7 @@ contract FREE is FRC758 {
 
     /**
      * @notice Burns FREE from sender's balance.
+     *
      * @param _amount Amount to burn.
      */
     function burn(uint256 _amount) public {
@@ -65,6 +71,7 @@ contract FREE is FRC758 {
 
     /**
      * @notice Mints a time slice of FREE from sender's balance.
+     *
      * @param _account Sender's account.
      * @param _amount Amount to mint.
      * @param _tokenStart Start time of slice to be minted.
@@ -77,6 +84,7 @@ contract FREE is FRC758 {
 
     /**
      * @notice Burns a time slice of FREE from sender's balance.
+     *
      * @param _account Sender's account.
      * @param _amount Amount to burn.
      * @param _tokenStart Start time of slice to be burned.

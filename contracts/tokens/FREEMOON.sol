@@ -5,7 +5,9 @@ import "./../FRC758/FRC758.sol";
 
 /**
  * @title The FREEMOON Token contract
+ *
  * @author Paddy Curé
+ *
  * @notice FREEMOON is an FRC758 standard token.
  */
 contract FREEMOON is FRC758 {
@@ -18,6 +20,7 @@ contract FREEMOON is FRC758 {
 
     /**
      * @notice Emits when someone wins 1 FREEMOON.
+     *
      * @param beneficiary The winner of the FREEMOON.
      * @param lottery The ID of the lottery the winner was taking part in. Lottery is determined by FREE balance.
      */
@@ -25,6 +28,7 @@ contract FREEMOON is FRC758 {
 
     /**
      * @notice On deployment, the required addresses are set, and initial supply is minted.
+     *
      * @param _name The name of the token, i.e. "The FREEMOON Token".
      * @param _symbol The symbol of the token, i.e. "FREEMOON".
      * @param _decimals The decimals of the token, used for display puposes, i.e. 18.
@@ -41,6 +45,7 @@ contract FREEMOON is FRC758 {
 
     /**
      * @notice Update the address permitted to mint FREE (faucet). Only possible from governance vote.
+     *
      * @param _faucet The new address for the faucet contract.
      */
     function updateAuth(address _faucet) public {
@@ -50,6 +55,7 @@ contract FREEMOON is FRC758 {
 
     /**
      * @notice When someone wins the FREEMOON draw, they are rewarded 1 FREEMOON.
+     *
      * @param _winner The winning address to be rewarded.
      * @param _lottery The category of odds the winner won in, based off their balance of FREE.
      */
@@ -62,6 +68,7 @@ contract FREEMOON is FRC758 {
 
     /**
      * @notice Burns FREEMOON from sender's balance.
+     *
      * @param _amount Amount to burn.
      */
     function burn(uint256 _amount) public {
@@ -70,6 +77,7 @@ contract FREEMOON is FRC758 {
 
     /**
      * @notice Mints a time slice of FREE from sender's balance.
+     *
      * @param _account Sender's account.
      * @param _amount Amount to mint.
      * @param _tokenStart Start time of slice to be minted.
@@ -82,6 +90,7 @@ contract FREEMOON is FRC758 {
 
     /**
      * @notice Burns a time slice of FREE from sender's balance.
+     *
      * @param _account Sender's account.
      * @param _amount Amount to burn.
      * @param _tokenStart Start time of slice to be burned.

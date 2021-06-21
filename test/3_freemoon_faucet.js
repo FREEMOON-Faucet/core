@@ -8,6 +8,7 @@ const FREEMOON = artifacts.require("FREEMOON")
 
 let coordinator, governance, user
 let faucet, free, freemoon
+let categories, odds
 let fromNowFiveMins, fromNowTenMins, startTime
 
 const toWei = val => {
@@ -19,15 +20,27 @@ const fromWei = val => {
 }
 
 const config = () => {
-  const lottery = [
-    [ "1", "0" ],
-    [ "100", "100000" ],
-    [ "1000", "10000" ],
-    [ "10000", "1000" ],
-    [ "25000", "100" ],
-    [ "50000", "50" ],
-    [ "100000", "25" ],
-    [ "100000", "10" ]
+
+  categories = [
+    "1",
+    "100",
+    "1000",
+    "10000",
+    "25000",
+    "50000",
+    "100000",
+    "100000"
+  ]
+
+  odds = [
+    "0",
+    "1000000000",
+    "100000000",
+    "10000000",
+    "1000000",
+    "500000",
+    "250000",
+    "100000"
   ]
 
   return {
@@ -35,8 +48,8 @@ const config = () => {
     cooldownTime: "3600", // 1 hour
     payoutThreshold: "1", // 1 entry == receive FREE
     payoutAmount: toWei("1"), // 1 FREE
-    categories: lottery.map(cat => toWei(cat[0])), // balances required for each FREEMOON lottery category
-    odds: lottery.map(cat => cat[1]) // odds of winning for each category
+    categories: categories.map(cat => toWei(cat)), // balances required for each FREEMOON lottery category
+    odds: odds // odds of winning for each category
   }
 }
 
@@ -70,8 +83,6 @@ const setUp = async () => {
     governance,
     faucet.address
   )
-
-  await faucet.initialize(free.address, freemoon.address)
 }
 
 const setTimes = async () => {
@@ -100,22 +111,6 @@ const advanceBlockAtTime = async time => {
   )
 }
 
-const testLottery = async (id, tries) => {
-  let txHash, blockHash, result
-  let wins = []
-  let losses = []
-
-  for(let i = 0; i < tries; i++) {
-    txHash = web3.utils.soliditySha3(i.toString())
-    blockHash = web3.utils.soliditySha3(txHash)
-
-    result = await faucet.checkWin(id, txHash, blockHash)
-    result ? wins.push(result) : losses.push(result)
-  }
-
-  return [ wins, losses ]
-}
-
 
 contract("Freemoon Faucet", async () => {
   beforeEach("Re-deploy all, set start time", async () => {
@@ -123,92 +118,87 @@ contract("Freemoon Faucet", async () => {
     await setTimes()
   })
 
-  it("Category zero: 0 in 1", async () => {
-    console.log("--- RANDOM NUMBER GENERATOR TESTING ---")
 
-    let txHash, blockHash, result
+  // INITIAL VALUES
+  it("Should set the correct addresses for coordinator and governance", async () => {
+    const coordinatorSet = await faucet.coordinator()
+    const governanceSet = await faucet.governance()
 
-    txHash = web3.utils.soliditySha3("test")
-    blockHash = web3.utils.soliditySha3(txHash)
-    result = await faucet.checkWin(0, txHash, blockHash)
-
-    expect(result).to.be.false
+    expect(coordinatorSet).to.equal(coordinator)
+    expect(governanceSet).to.equal(governance)
   })
 
-  it("Category one: 1 in 1 billion (100,000 in testing)", async () => {
-    let [ wins, losses ] = await testLottery(1, 10000)
-    
-    console.log(`
-      Wins: ${wins.length}
-      Losses: ${losses.length}
-      Expected Ratio: 0.0001%
-      Actual Ratio: ${(wins.length / losses.length) * 100}%
-    `)
+  it("Should set correct initial faucet parameters", async () => {
+    const sc = fromWei(await faucet.subscriptionCost())
+    const ct = (await faucet.cooldownTime()).toString()
+    const pt = (await faucet.payoutThreshold()).toString()
+    const pa = fromWei(await faucet.payoutAmount())
+
+    let { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount } = config()
+    subscriptionCost = fromWei(subscriptionCost)
+    payoutAmount = fromWei(payoutAmount)
+
+    expect(sc).to.equal(subscriptionCost)
+    expect(ct).to.equal(cooldownTime)
+    expect(pt).to.equal(payoutThreshold)
+    expect(pa).to.equal(payoutAmount)
   })
 
-  it("Category two: 1 in 100 million (10,000 in testing)", async () => {
-    let [ wins, losses ] = await testLottery(2, 10000)
-    
-    console.log(`
-      Wins: ${wins.length}
-      Losses: ${losses.length}
-      Expected Ratio: 0.01%
-      Actual Ratio: ${(wins.length / losses.length) * 100}%
-    `)
+  it("Should set correct categories", async () => {
+    for(let i = 0; i < 8; i++) {
+      let category = fromWei(await faucet.categories(i))
+      expect(category).to.equal(categories[i])
+    }
   })
 
-  it("Category three: 1 in 10 million (1,000 in testing)", async () => {
-    let [ wins, losses ] = await testLottery(3, 10000)
-    
-    console.log(`
-      Wins: ${wins.length}
-      Losses: ${losses.length}
-      Expected Ratio: 0.1%
-      Actual Ratio: ${(wins.length / losses.length) * 100}%
-    `)
+  it("Should set correct odds", async () => {
+    for(let i = 0; i < 8; i++) {
+      let odd = (await faucet.odds(i)).toString()
+      expect(odd).to.equal(odds[i])
+    }
   })
 
-  it("Category four: 1 in 1 million (100 in testing)", async () => {
-    let [ wins, losses ] = await testLottery(4, 10000)
-    
-    console.log(`
-      Wins: ${wins.length}
-      Losses: ${losses.length}
-      Expected Ratio: 1%
-      Actual Ratio: ${(wins.length / losses.length) * 100}%
-    `)
+
+  // ADDRESS RESTRICTIONS
+  it("Should allow coordinator address to call initialize", async () => {
+    await truffleAssert.passes(faucet.initialize(free.address, freemoon.address, {from: coordinator}))
   })
 
-  it("Category five: 1 in 500 thousand (50 in testing)", async () => {
-    let [ wins, losses ] = await testLottery(5, 10000)
-    
-    console.log(`
-      Wins: ${wins.length}
-      Losses: ${losses.length}
-      Expected Ratio: 2%
-      Actual Ratio: ${(wins.length / losses.length) * 100}%
-    `)
+  it("Should not allow non-coordinator address to call initialize", async () => {
+    await truffleAssert.fails(
+      faucet.initialize(free.address, freemoon.address, {from: user}),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Only coordinator can call this function."
+    )
   })
 
-  it("Category six: 1 in 250 thousand (25 in testing)", async () => {
-    let [ wins, losses ] = await testLottery(6, 10000)
-    
-    console.log(`
-      Wins: ${wins.length}
-      Losses: ${losses.length}
-      Expected Ratio: 4%
-      Actual Ratio: ${(wins.length / losses.length) * 100}%
-    `)
+  it("Should only allow initialize to be called once", async () => {
+    await faucet.initialize(free.address, freemoon.address, {from: coordinator})
+
+    await truffleAssert.fails(
+      faucet.initialize(free.address, freemoon.address, {from: coordinator}),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Asset addresses can only ever be set once."
+    )
   })
 
-  it("Category seven: 1 in 100 thousand (10 in testing)", async () => {
-    let [ wins, losses ] = await testLottery(7, 10000)
-    
-    console.log(`
-      Wins: ${wins.length}
-      Losses: ${losses.length}
-      Expected Ratio: 10%
-      Actual Ratio: ${(wins.length / losses.length) * 100}%
-    `)
+  it("Should allow governance address to update faucet parameters", async () => {
+    await truffleAssert.passes(faucet.updateParams(toWei("2"), "86400", "24", toWei("1"), {from: governance}))
   })
+
+  it("Should not allow non-governance address to update faucet parameters", async () => {
+    await truffleAssert.fails(
+      faucet.updateParams(toWei("2"), "86400", "24", toWei("1"), {from: user}),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Only governance votes can update the faucet parameters."
+    )
+  })
+
+
+  // SUBSCRIBING
+  it("Should allow a valid address to subscribe to faucet")
+
+  it("Should not allow an address overpaying or underpaying to subscribe")
+
+  it("Should not allow a subscribed address to subscribe again")
 })

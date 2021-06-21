@@ -4,20 +4,29 @@ pragma solidity 0.8.5;
 import "./interfaces/IFREE.sol";
 import "./interfaces/IFREEMOON.sol";
 
-
+/**
+ * @title The FREEMOON Faucet
+ *
+ * @author Paddy Curé
+ *
+ * @notice The FREEMOON Faucet enables FSN addresses to subscribe, giving them the ability to claim periodic FREE tokens.
+ * @notice With every claim, the address gets entered into a lottery to win a rare FREEMOON token.
+ * @notice The odds of winning this lottery are determined by FREE balance, more FREE merits increased odds of winning. 
+ */
 contract Faucet {
 
     IFREE free;
     IFREEMOON freemoon;
 
-    address coordinator;
-    address governance;
-    bool initialized;
+    address public coordinator;
+    address public governance;
+    bool public initialized;
 
     uint256 constant TO_WEI = 10 ** 18;
-    uint256 public constant MAX_UINT256 = 2 ** 256 - 1;
+    uint8 constant CATEGORIES = 8;
+    uint256 constant MAX_UINT256 = 2 ** 256 - 1;
 
-    // Settings
+    // Configurable parameters
     uint256 public subscriptionCost;
     uint256 public cooldownTime;
     uint256 public payoutThreshold;
@@ -58,7 +67,16 @@ contract Faucet {
      * @param _categories A list of the balances required to qualify for each category.
      * @param _odds A list of odds of winning for each balance category.
      */
-    constructor(address _governance, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount, uint256[] memory _categories, uint256[] memory _odds) {
+    constructor(
+        address _governance,
+        uint256 _subscriptionCost,
+        uint256 _cooldownTime,
+        uint256 _payoutThreshold,
+        uint256 _payoutAmount,
+        uint256[] memory _categories,
+        uint256[] memory _odds
+    )
+    {
         coordinator = msg.sender;
         governance = _governance;
         subscriptionCost = _subscriptionCost;
@@ -120,12 +138,53 @@ contract Faucet {
         emit Entry(_entrant, lottery);
     }
 
-    function checkWin(uint8 _lottery, bytes32 _tx, bytes32 _block) public view onlyCoordinator returns(bool) {
+    /**
+     * @notice Checks if the account won the lottery and if so, mints them a FREEMOON token.
+     *
+     * @param _account The account which owns the entry.
+     * @param _lottery The lottery category the account is taking part in.
+     * @param _tx The transaction hash of their entry.
+     * @param _block The block hash of their entry.
+     *
+     * @dev Each time an "Entry" event is emitted, the parameters of the event get fed back into this function to check for a win.
+     */
+    function enterLottery(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public onlyCoordinator {
+        bool win = checkWin(_lottery, _tx ,_block);
+        if(win) {
+            _updateOdds();
+            freemoon.rewardWinner(_account, _lottery);
+        }
+    }
+    
+    /**
+     * @notice Update the parameters around which the faucet operates. Only possible from governance vote.
+     *
+     * @param _subscriptionCost The cost of subscribing in FSN.
+     * @param _cooldownTime The time in seconds an address has to wait before entering the FREEMOON draw again.
+     * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
+     * @param _payoutAmount The current amount of FREE payed to addresses who claim.
+     */
+    function updateParams(uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount) public {
+        require(msg.sender == governance, "FREEMOON: Only governance votes can update the faucet parameters.");
+        subscriptionCost = _subscriptionCost;
+        cooldownTime = _cooldownTime;
+        payoutThreshold = _payoutThreshold;
+        payoutAmount = _payoutAmount;
+    }
+
+    /**
+     * @notice Checks if the given transaction hash and block hash won the given lottery category.
+     *
+     * @param _lottery The lottery category being entered, this determines the odds of winning.
+     * @param _tx The transaction hash which will determine the random number.
+     * @param _block The block hash, which will determine the random number.
+     */
+    function checkWin(uint8 _lottery, bytes32 _tx, bytes32 _block) public view returns(bool) {
         if(odds[_lottery] == 0) {
             return false;
         } else {
-            uint256 maxWinAmount = MAX_UINT256 / uint256(odds[_lottery]);
-            uint256 entryValue = uint256(bytes32(keccak256(abi.encodePacked(_lottery, _tx, _block))));
+            uint256 maxWinAmount = MAX_UINT256 / odds[_lottery];
+            uint256 entryValue = uint256(keccak256(abi.encodePacked(_lottery, _tx, _block)));
             return bool(entryValue <= maxWinAmount);
         }
     }
@@ -139,7 +198,7 @@ contract Faucet {
         uint256 bal = free.balanceOf(_account);
         uint8 lottery;
 
-        for(uint8 ii = 0; ii <= 7; ii++) {
+        for(uint8 ii = 0; ii < CATEGORIES; ii++) {
             if(bal < categories[ii]) {
                 lottery = ii;
                 break;
@@ -158,5 +217,18 @@ contract Faucet {
      */
     function getPayoutStatus(address _account) public view returns(bool) {
         return payoutStatus[_account] >= payoutThreshold;
+    }
+
+    /**
+     * @notice Every time a FREEMOON token is won, the chances of winning one are globally reduced by 10%.
+     */
+    function _updateOdds() private {
+        for(uint8 i = 0; i < CATEGORIES; i++) {
+            if(odds[i] == 0) {
+                continue;
+            } else {
+                odds[i] += odds[i] / 10;
+            }
+        }
     }
 }
