@@ -3,6 +3,8 @@ const truffleAssert = require("truffle-assertions")
 
 const FREEMOON = artifacts.require("FREEMOON")
 
+const utils = require("../scripts/99_utils")
+
 
 let governance, user, faucet, dummy
 let freemoon
@@ -12,16 +14,8 @@ const setUp = async () => {
   freemoon = await FREEMOON.new("Freemoon Token", "FREEMOON", 18, governance, faucet)
 }
 
-const toWei = val => {
-  return web3.utils.toWei(val, "ether")
-}
 
-const fromWei = val => {
-  return web3.utils.fromWei(val)
-}
-
-
-contract("FREEMOON Token", () => {
+contract("The FREEMOON Token", () => {
   beforeEach("Re-deploy all", async () => {
     await setUp()
   })
@@ -45,7 +39,7 @@ contract("FREEMOON Token", () => {
   })
 
   it("Should have initial total supply of 10 FREEMOON", async () => {
-    const circulatingSupply = fromWei(await freemoon.circulationSupply())
+    const circulatingSupply = utils.fromWei(await freemoon.circulationSupply())
 
     expect(circulatingSupply).to.equal("10")
   })
@@ -70,7 +64,7 @@ contract("FREEMOON Token", () => {
 
   it("Should allow faucet address to mint FREEMOON", async () => {
     await truffleAssert.passes(freemoon.rewardWinner(user, 0, {from: faucet}))
-    const freemoonBal = fromWei(await freemoon.balanceOf(user))
+    const freemoonBal = utils.fromWei(await freemoon.balanceOf(user))
 
     expect(freemoonBal).to.equal("1")
   })
@@ -85,8 +79,8 @@ contract("FREEMOON Token", () => {
 
   it("Should allow user to burn FREEMOON from balance", async () => {
     await freemoon.rewardWinner(user, 0, {from: faucet})
-    await freemoon.burn(toWei("0.2"), {from: user})
-    const freemoonBal = fromWei(await freemoon.balanceOf(user))
+    await freemoon.burn(utils.toWei("0.2"), {from: user})
+    const freemoonBal = utils.fromWei(await freemoon.balanceOf(user))
 
     expect(freemoonBal).to.equal("0.8")
   })

@@ -1,20 +1,10 @@
 const BigNumber = require("bignumber.js")
 const { expect } = require("chai")
-const truffleAssert = require("truffle-assertions")
 
 const MockFaucet = artifacts.require("MockFaucet")
 
 
 let coordinator
-
-
-const toWei = val => {
-  return web3.utils.toWei(val, "ether")
-}
-
-const fromWei = val => {
-  return web3.utils.fromWei(val)
-}
 
 const config = () => {
   return [
@@ -67,13 +57,12 @@ const log = (expected, w, l) => {
 }
 
 
-contract("Randomness", async () => {
+contract("Random Number Generator Testing", async () => {
   beforeEach("Re-deploy all, set start time", async () => {
     await setUp()
   })
 
   it("Category zero: 0 in 1", async () => {
-    console.log("--- RANDOM NUMBER GENERATOR TESTING ---")
 
     let txHash, blockHash, result
 

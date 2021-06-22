@@ -26,8 +26,8 @@ contract Faucet is FSNContract {
     uint256 constant TO_WEI = 10 ** 18;
     uint8 constant CATEGORIES = 8;
     uint256 constant MAX_UINT256 = 2 ** 256 - 1;
-    bytes32 constant FSN_ASSET_ID = 0xffffffffffffffffffffffffffffffffffffffff;
-    uint64 constant FOUR_MONTHS = 3600 * 24 * 31 * 4;
+    bytes32 constant FSN_ASSET_ID = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    uint64 constant FOUR_MONTHS = 3600 * 24 * 30 * 4;
 
     // Configurable parameters
     uint256 public subscriptionCost;
@@ -53,13 +53,24 @@ contract Faucet is FSNContract {
     event Entry(address indexed entrant, uint8 indexed lottery);
 
     /**
-     * @notice Emitted when an entry is processed and the result (win or lose) is available.
+     * @notice Emitted when an entry wins the lottery and the address is awarded a FREEMOON.
      *
      * @param entrant The address who entered the FREEMOON draw.
      * @param lottery The category that the address entered into.
-     * @param win The result of their entry, win or lose.
+     * @param txHash The transaction hash of the "enter" function call.
+     * @param blockHash The block hash of the "enter" function call.
      */
-    event Result(address indexed entrant, uint8 indexed lottery, bool win);
+    event Win(address indexed entrant, uint8 indexed lottery, bytes32 txHash, bytes32 blockHash);
+
+    /**
+     * @notice Emitted when an entry loses the lottery.
+     *
+     * @param entrant The address who entered the FREEMOON draw.
+     * @param lottery The category that the address entered into.
+     * @param txHash The transaction hash of the "enter" function call.
+     * @param blockHash The block hash of the "enter" function call.
+     */
+    event Loss(address indexed entrant, uint8 indexed lottery, bytes32 txHash, bytes32 blockHash);
 
     modifier onlyCoordinator {
         require(msg.sender == coordinator, "FREEMOON: Only coordinator can call this function.");
@@ -128,10 +139,19 @@ contract Faucet is FSNContract {
         isSubscribed[_account] = true;
     }
 
-    function buyFreeWithTimelock() public payable {
+    /**
+     * @notice Buy FREE with TL FSN.
+     * @notice The conversion is 2 4-month TL FSN => 1 FREE.
+     */
+    function swapTimelockForFree() public payable {
+        require(isSubscribed[msg.sender], "FREEMOON: Only subscribed addresses can swap TL FSN for FREE.");
         uint64 fourMonthsFromNow = uint64(block.timestamp) + FOUR_MONTHS;
         uint256[] memory extra;
-        _receiveAsset(FSN_ASSET_ID, 0, fourMonthsFromNow, SendAssetFlag.UseTimeLockToTimeLock, extra);
+
+        uint256 amount = msg.value / 2;
+        require(_receiveAsset(FSN_ASSET_ID, 0, fourMonthsFromNow, SendAssetFlag.UseAnyToTimeLock, extra));
+        free.mint(msg.sender, amount);
+
     }
 
     /**
@@ -171,9 +191,10 @@ contract Faucet is FSNContract {
         if(win) {
             _updateOdds();
             freemoon.rewardWinner(_account, _lottery);
+            emit Win(_account, _lottery, _tx, _block);
+        } else {
+          emit Loss(_account, _lottery, _tx, _block);
         }
-
-        emit Result(_account, _lottery, win);
     }
     
     /**

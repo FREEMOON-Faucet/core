@@ -3,17 +3,11 @@ const truffleAssert = require("truffle-assertions")
 
 const FREE = artifacts.require("FREE")
 
+const utils = require("../scripts/99_utils")
+
 
 let governance, user, airdrop, faucet, dummy1, dummy2
 let free
-
-const toWei = val => {
-  return web3.utils.toWei(val, "ether")
-}
-
-const fromWei = val => {
-  return web3.utils.fromWei(val)
-}
 
 const setUp = async () => {
   [ governance, user, airdrop, faucet, dummy1, dummy2 ] = await web3.eth.getAccounts()
@@ -21,7 +15,7 @@ const setUp = async () => {
 }
  
 
-contract("FREE Token", () => {
+contract("The FREE Token", () => {
   beforeEach("Re-deploy all", async () => {
     await setUp()
   })
@@ -47,7 +41,7 @@ contract("FREE Token", () => {
   })
 
   it("Should have initial total supply of 100 000 000 FREE", async () => {
-    const circulatingSupply = fromWei(await free.circulationSupply())
+    const circulatingSupply = utils.fromWei(await free.circulationSupply())
 
     expect(circulatingSupply).to.equal("100000000")
   })
@@ -75,31 +69,31 @@ contract("FREE Token", () => {
   })
 
   it("Should allow airdrop address to mint FREE into user's account", async () => {
-    await truffleAssert.passes(free.mint(user, toWei("1"), {from: airdrop}))
-    const freeBal = fromWei(await free.balanceOf(user))
+    await truffleAssert.passes(free.mint(user, utils.toWei("1"), {from: airdrop}))
+    const freeBal = utils.fromWei(await free.balanceOf(user))
 
     expect(freeBal).to.equal("1")
   })
 
   it("Should allow faucet address to mint FREE", async () => {
-    await truffleAssert.passes(free.mint(user, toWei("1"), {from: faucet}))
-    const freeBal = fromWei(await free.balanceOf(user))
+    await truffleAssert.passes(free.mint(user, utils.toWei("1"), {from: faucet}))
+    const freeBal = utils.fromWei(await free.balanceOf(user))
 
     expect(freeBal).to.equal("1")
   })
 
   it("Should not allow unauthorized address to mint FREE", async () => {
     await truffleAssert.fails(
-      free.mint(user, toWei("1"), {from: user}),
+      free.mint(user, utils.toWei("1"), {from: user}),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: Only faucet and airdrop have minting privileges."
     )
   })
 
   it("Should allow user to burn FREE from balance", async () => {
-    await free.mint(user, toWei("10"), {from: airdrop})
-    await free.burn(toWei("5"), {from: user})
-    const freeBal = fromWei(await free.balanceOf(user))
+    await free.mint(user, utils.toWei("10"), {from: airdrop})
+    await free.burn(utils.toWei("5"), {from: user})
+    const freeBal = utils.fromWei(await free.balanceOf(user))
 
     expect(freeBal).to.equal("5")
   })
