@@ -1,6 +1,5 @@
 const { expect } = require("chai")
 const truffleAssert = require("truffle-assertions")
-const web3FusionExtend = require('web3-fusion-extend')
 
 const Faucet = artifacts.require("Faucet")
 const FREE = artifacts.require("FREE")
@@ -8,9 +7,6 @@ const FREEMOON = artifacts.require("FREEMOON")
 
 const utils = require("../scripts/99_utils")
 
-
-const web3fsn = web3FusionExtend.extend(web3)
-const FSN = web3fsn.fsn.consts.FSN
 
 let coordinator, governance, user, freeHolder1
 let faucet, free, freemoon
@@ -329,10 +325,4 @@ contract("The FREEMOON Faucet", async () => {
 
     expect(result.logs[0].event).to.equal("Loss")
   })
-
-
-  // TIMELOCK FUSION FREE SWAPS
-  it("Should allow someone with sufficient FSN to swap for FREE")
-
-  it("Should update timelock balance correctly when swapping timelock for FREE")
 })

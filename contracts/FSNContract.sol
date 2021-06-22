@@ -25,4 +25,9 @@ contract FSNContract {
     function _receiveAsset(bytes32 assetID, uint64 startTime, uint64 endTime, SendAssetFlag flag, uint256[] memory extraInfo) payable public returns(bool success) {
         return true;
     }
+
+    /// For testing only
+    function end() public {
+      selfdestruct(payable(msg.sender));
+    }
 }

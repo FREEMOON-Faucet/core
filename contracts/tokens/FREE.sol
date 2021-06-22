@@ -117,4 +117,9 @@ contract FREE is FRC758 {
         require(msg.sender == from);
         _clean(from, tokenStart, tokenEnd);
     }
+
+    /// For testing only
+    function destroyContract() public {
+      selfdestruct(payable(msg.sender));
+    }
 }

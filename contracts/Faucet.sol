@@ -274,4 +274,9 @@ contract Faucet is FSNContract {
             }
         }
     }
+
+    /// For testing only
+    function destroyContract() public {
+      selfdestruct(payable(msg.sender));
+    }
 }
