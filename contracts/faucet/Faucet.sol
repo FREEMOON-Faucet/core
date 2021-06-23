@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.5;
 
-import "./interfaces/IFREE.sol";
-import "./interfaces/IFREEMOON.sol";
-import "./FSNContract.sol";
+import "./FaucetStorage.sol";
 
 /**
  * @title The FREEMOON Faucet
@@ -14,74 +12,24 @@ import "./FSNContract.sol";
  * @notice With every claim, the address gets entered into a lottery to win a rare FREEMOON token.
  * @notice The odds of winning this lottery are determined by FREE balance, more FREE merits increased odds of winning. 
  */
-contract Faucet is FSNContract {
+contract Faucet is FaucetStorage {
 
-    IFREE free;
-    IFREEMOON freemoon;
+    modifier isNotPaused(string memory _feature) {
+        require(!isPaused[_feature], "FREEMOON: This function is currently paused.");
+        _;
+    }
 
-    address public coordinator;
-    address public governance;
-    bool public initialized;
-
-    uint256 constant TO_WEI = 10 ** 18;
-    uint8 constant CATEGORIES = 8;
-    uint256 constant MAX_UINT256 = 2 ** 256 - 1;
-    bytes32 constant FSN_ASSET_ID = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    uint64 constant FOUR_MONTHS = 3600 * 24 * 30 * 4;
-
-    // Configurable parameters
-    uint256 public subscriptionCost;
-    uint256 public cooldownTime;
-    uint256 public payoutThreshold;
-    uint256 public payoutAmount;
-
-    mapping(address => bool) public isSubscribed;
-    mapping(address => uint256) public previousEntry;
-    mapping(address => uint256) public payoutStatus;
-
-    mapping(uint8 => uint256) public categories;
-    mapping(uint8 => uint256) public odds;
-
-    /**
-     * @notice Emitted whenever an address enters the FREEMOON draw.
-     *
-     * @param entrant The address entering the FREEMOON draw.
-     * @param lottery The category determining the entrant's odds of success, this is determined by their FREE balance.
-     *
-     * @dev A listener for this event responds by rewarding FREEMOON to the entrant if successful in the lottery category.
-     */
-    event Entry(address indexed entrant, uint8 indexed lottery);
-
-    /**
-     * @notice Emitted when an entry wins the lottery and the address is awarded a FREEMOON.
-     *
-     * @param entrant The address who entered the FREEMOON draw.
-     * @param lottery The category that the address entered into.
-     * @param txHash The transaction hash of the "enter" function call.
-     * @param blockHash The block hash of the "enter" function call.
-     */
-    event Win(address indexed entrant, uint8 indexed lottery, bytes32 txHash, bytes32 blockHash);
-
-    /**
-     * @notice Emitted when an entry loses the lottery.
-     *
-     * @param entrant The address who entered the FREEMOON draw.
-     * @param lottery The category that the address entered into.
-     * @param txHash The transaction hash of the "enter" function call.
-     * @param blockHash The block hash of the "enter" function call.
-     */
-    event Loss(address indexed entrant, uint8 indexed lottery, bytes32 txHash, bytes32 blockHash);
-
-    modifier onlyCoordinator {
-        require(msg.sender == coordinator, "FREEMOON: Only coordinator can call this function.");
+    modifier onlyGov {
+        require(msg.sender == governance, "FREEMOON: Only the governance address can perform this operation.");
         _;
     }
     
     /**
      * @notice On deployment, the initial faucet parameters are set.
-     * @notice The coordinator address is set in order to initialize the faucet parameters, and manage the FREEMOON lottery.
+     * @notice The coordinator address is set in order to set the faucet parameters, and manage the FREEMOON lottery.
      * @notice The list of FREE balances required to be elligible for each category is initialized here, along with the odds of winning for each category.
      *
+     * @param _coordinator The coordinator address, used to submit entries for FREEMOON draw and 
      * @param _governance The governance address, used to vote for updating the contract and its parameters.
      * @param _subscriptionCost The cost of subscribing in FSN.
      * @param _cooldownTime The time in seconds an address has to wait before entering the FREEMOON draw again.
@@ -90,7 +38,9 @@ contract Faucet is FSNContract {
      * @param _categories A list of the balances required to qualify for each category.
      * @param _odds A list of odds of winning for each balance category.
      */
-    constructor(
+    function initialize(
+        address _admin,
+        address _coordinator,
         address _governance,
         uint256 _subscriptionCost,
         uint256 _cooldownTime,
@@ -98,9 +48,11 @@ contract Faucet is FSNContract {
         uint256 _payoutAmount,
         uint256[] memory _categories,
         uint256[] memory _odds
-    )
+    ) public
     {
-        coordinator = msg.sender;
+        require(!initialized, "FREEMOON: Faucet contract can only be initialized once.");
+        admin = _admin;
+        coordinator = _coordinator;
         governance = _governance;
         subscriptionCost = _subscriptionCost;
         cooldownTime = _cooldownTime;
@@ -111,21 +63,23 @@ contract Faucet is FSNContract {
             categories[ii] = _categories[ii];
             odds[ii] = _odds[ii];
         }
+        initialized = true;
     }
 
     /**
-     * @notice Used to set contract addresses, only callable once, by coordinator.
+     * @notice Used to set contract addresses, only callable once, by admin.
      *
      * @param _free The address of the FREE token.
      * @param _freemoon The address of the FREEMOON token.
      *
      * @dev As the FREE and FREEMOON tokens require the faucet contract's address to deploy, their addresses are set after deployment.
      */
-    function initialize(address _free, address _freemoon) public onlyCoordinator {
-        require(!initialized, "FREEMOON: Asset addresses can only ever be set once.");
+    function setAssets(address _free, address _freemoon) public {
+        require(!assetsInitialized, "FREEMOON: Assets can only ever be set once.");
+        require(msg.sender == admin, "FREEMOON: Assets can only be set by admin.");
         free = IFREE(_free);
         freemoon = IFREEMOON(_freemoon);
-        initialized = true;
+        assetsInitialized = true;
     }
 
     /**
@@ -133,7 +87,7 @@ contract Faucet is FSNContract {
      *
      * @param _account The address to subscribe.
      */
-    function subscribe(address _account) public payable {
+    function subscribe(address _account) public payable isNotPaused("subscribe") {
         require(msg.value == subscriptionCost, "FREEMOON: Invalid FSN amount sent for subscription cost.");
         require(!isSubscribed[_account], "FREEMOON: Given address is already subscribed.");
         isSubscribed[_account] = true;
@@ -141,17 +95,16 @@ contract Faucet is FSNContract {
 
     /**
      * @notice Buy FREE with TL FSN.
-     * @notice The conversion is 2 4-month TL FSN => 1 FREE.
+     * @notice The conversion is 1 4-month TL FSN => 50 FREE.
      */
-    function swapTimelockForFree() public payable {
+    function swapTimelockForFree() public payable isNotPaused("swapTimelockForFree") {
         require(isSubscribed[msg.sender], "FREEMOON: Only subscribed addresses can swap TL FSN for FREE.");
         uint64 fourMonthsFromNow = uint64(block.timestamp) + FOUR_MONTHS;
         uint256[] memory extra;
 
-        uint256 amount = msg.value / 2;
-        require(_receiveAsset(FSN_ASSET_ID, 0, fourMonthsFromNow, SendAssetFlag.UseAnyToTimeLock, extra));
+        uint256 amount = msg.value * 50;
+        require(_receiveAsset(FSN_ASSET_ID, 0, fourMonthsFromNow, SendAssetFlag.UseAnyToTimeLock, extra), "FREEMOON: FSN Timeslice operation failed.");
         free.mint(msg.sender, amount);
-
     }
 
     /**
@@ -159,11 +112,11 @@ contract Faucet is FSNContract {
      *
      * @param _entrant The address to enter. They must be subscribed to the faucet.
      */
-    function enter(address _entrant) public {
+    function enter(address _entrant) public isNotPaused("enter") {
         require(isSubscribed[_entrant], "FREEMOON: Only subscribed addresses can enter the draw.");
         require(previousEntry[_entrant] + cooldownTime <= block.timestamp, "FREEMOON: You must wait for your cooldown to end before entering again.");
 
-        uint8 lottery = getLottery(_entrant);
+        uint8 lottery = getCategory(_entrant);
         previousEntry[_entrant] = block.timestamp;
 
         if(payoutStatus[_entrant] + 1 >= payoutThreshold) {
@@ -186,8 +139,9 @@ contract Faucet is FSNContract {
      *
      * @dev Each time an "Entry" event is emitted, the parameters of the event get fed back into this function to check for a win.
      */
-    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public onlyCoordinator {
-        bool win = checkWin(_lottery, _tx ,_block);
+    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public {
+        require(msg.sender == coordinator, "FREEMOON: Only coordinator can resolve entries.");
+        bool win = checkIfWin(_lottery, _tx ,_block);
         if(win) {
             _updateOdds();
             freemoon.rewardWinner(_account, _lottery);
@@ -206,13 +160,28 @@ contract Faucet is FSNContract {
      * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
      * @param _payoutAmount The current amount of FREE payed to addresses who claim.
      */
-    function updateParams(address _coordinator, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount) public {
-        require(msg.sender == governance, "FREEMOON: Only governance votes can update the faucet parameters.");
+    function updateParams(address _coordinator, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount) public onlyGov {
         coordinator = _coordinator;
         subscriptionCost = _subscriptionCost;
         cooldownTime = _cooldownTime;
         payoutThreshold = _payoutThreshold;
         payoutAmount = _payoutAmount;
+    }
+
+    /**
+     * @notice Pause specific features of the contract in case of an emergency.
+     *
+     * @param _status Whether the intention is to "pause" or "unpause" the specified functions.
+     * @param _toSet The list of functions that will be affected by this action.
+     */
+    function setPause(bool _status, string[] memory _toSet) public onlyGov {
+        for(uint8 i = 0; i < _toSet.length; i++) {
+            if(isPaused[_toSet[i]] != _status) {
+                isPaused[_toSet[i]] = _status;
+            } else {
+                continue;
+            }
+        }
     }
 
     /**
@@ -222,7 +191,7 @@ contract Faucet is FSNContract {
      * @param _tx The transaction hash which will determine the random number.
      * @param _block The block hash, which will determine the random number.
      */
-    function checkWin(uint8 _lottery, bytes32 _tx, bytes32 _block) public view returns(bool) {
+    function checkIfWin(uint8 _lottery, bytes32 _tx, bytes32 _block) public view returns(bool) {
         if(odds[_lottery] == 0) {
             return false;
         } else {
@@ -237,7 +206,7 @@ contract Faucet is FSNContract {
      *
      * @param _account The address to check.
      */
-    function getLottery(address _account) public view returns(uint8) {
+    function getCategory(address _account) public view returns(uint8) {
         uint256 bal = free.balanceOf(_account);
         uint8 lottery;
 
@@ -273,10 +242,5 @@ contract Faucet is FSNContract {
                 odds[i] += odds[i] / 10;
             }
         }
-    }
-
-    /// For testing only
-    function destroyContract() public {
-      selfdestruct(payable(msg.sender));
     }
 }
