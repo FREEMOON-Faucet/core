@@ -44,17 +44,7 @@ contract FREEMOON is FRC758 {
     }
 
     /**
-     * @notice Update the address permitted to mint FREE (faucet). Only possible from governance vote.
-     *
-     * @param _faucet The new address for the faucet contract.
-     */
-    function updateAuth(address _faucet) public {
-        require(msg.sender == governance, "FREEMOON: Only governance votes can update the faucet address.");
-        faucet = _faucet;
-    }
-
-    /**
-     * @notice When someone wins the FREEMOON draw, they are rewarded 1 FREEMOON.
+     * @notice When someone wins the FREEMOON lottery, they are rewarded with 1 FREEMOON.
      *
      * @param _winner The winning address to be rewarded.
      * @param _lottery The category of odds the winner won in, based off their balance of FREE.
@@ -99,6 +89,16 @@ contract FREEMOON is FRC758 {
     function burnTimeSlice(address _account, uint256 _amount, uint256 _tokenStart, uint256 _tokenEnd) public {
         require(msg.sender == _account, "FREEMOON: Only owner of tokens can burn time slices.");
         _burnSlice(_account, _amount, _tokenStart, _tokenEnd);
+    }
+
+    /**
+     * @notice Update the address permitted to mint FREE (faucet). Only possible from governance vote.
+     *
+     * @param _faucet The new address for the faucet contract.
+     */
+    function updateAuth(address _faucet) public {
+        require(msg.sender == governance, "FREEMOON: Only governance votes can update the faucet address.");
+        faucet = _faucet;
     }
 
     function transfer(address _recipient, uint256 _amount) public returns(bool) {

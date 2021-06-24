@@ -4,7 +4,7 @@ pragma solidity 0.8.5;
 import "../FRC758/FRC758.sol";
 
 /**
- * @title The FREE Token contract
+ * @title The FREE Token Contract
  *
  * @author Paddy Curé
  *
@@ -34,18 +34,6 @@ contract FREE is FRC758 {
         faucet = _faucet;
         circulationSupply += INITIAL_SUPPLY * 10 ** _decimals;
         _mint(msg.sender, INITIAL_SUPPLY * 10 ** _decimals);
-    }
-
-    /**
-     * @notice Update the addresses permitted to mint FREE (airdrop and faucet). Only possible from governance vote.
-     *
-     * @param _airdrop The new address for the airdrop contract.
-     * @param _faucet The new address for the faucet contract.
-     */
-    function updateAuth(address _airdrop, address _faucet) public {
-        require(msg.sender == governance, "FREEMOON: Only governance votes can update the airdrop and/or the faucet addresses.");
-        airdrop = _airdrop;
-        faucet = _faucet;
     }
 
     /**
@@ -95,6 +83,18 @@ contract FREE is FRC758 {
         _burnSlice(_account, _amount, _tokenStart, _tokenEnd);
     }
 
+    /**
+     * @notice Update the addresses permitted to mint FREE (airdrop and faucet). Only possible from governance vote.
+     *
+     * @param _airdrop The new address for the airdrop contract.
+     * @param _faucet The new address for the faucet contract.
+     */
+    function updateAuth(address _airdrop, address _faucet) public {
+        require(msg.sender == governance, "FREEMOON: Only governance votes can update the airdrop and/or the faucet addresses.");
+        airdrop = _airdrop;
+        faucet = _faucet;
+    }
+
     function transfer(address _recipient, uint256 _amount) public returns(bool) {
         transferFrom(msg.sender, _recipient, _amount);
         return true;
@@ -116,10 +116,5 @@ contract FREE is FRC758 {
     function clean(address from, uint256 tokenStart, uint256 tokenEnd) public {
         require(msg.sender == from);
         _clean(from, tokenStart, tokenEnd);
-    }
-
-    /// For testing only
-    function destroyContract() public {
-      selfdestruct(payable(msg.sender));
     }
 }
