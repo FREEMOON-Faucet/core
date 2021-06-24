@@ -2,14 +2,17 @@ const { expect } = require("chai")
 const truffleAssert = require("truffle-assertions")
 
 const Faucet = artifacts.require("Faucet")
-const FREE = artifacts.require("FREE")
-const FREEMOON = artifacts.require("FREEMOON")
+const FaucetProxy = artifacts.require("FaucetProxy")
+
+const Free = artifacts.require("FREE")
+const Freemoon = artifacts.require("FREEMOON")
 
 const utils = require("../scripts/99_utils")
 
 
-let coordinator, governance, user, freeHolder1
-let faucet, free, freemoon
+let coordinator, governance, admin, user, freeHolder
+let faucetLayout, faucetProxy, faucet
+let free, freemoon
 let categories, odds
 let fromNowOneHour, startTime, newTime
 
@@ -48,10 +51,16 @@ const config = () => {
 }
 
 const setUp = async () => {
-  [ coordinator, governance, user, airdrop, freeHolder1 ] = await web3.eth.getAccounts()
+  [ coordinator, governance, admin, user, airdrop, freeHolder ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, categories, odds } = config()
+
+  faucetLayout = await Faucet.new({from: admin})
+  faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
+  faucet = await Faucet.at(faucetProxy.address, {from: admin})
   
-  faucet = await Faucet.new(
+  await faucet.initialize(
+    admin,
+    coordinator,
     governance,
     subscriptionCost,
     cooldownTime,
@@ -61,27 +70,28 @@ const setUp = async () => {
     odds
   )
 
-  free = await FREE.new(
+  free = await Free.new(
     "Free Token",
     "FREE",
     18,
     governance,
     airdrop,
     faucet.address,
-    {from: freeHolder1}
+    {from: freeHolder}
   )
 
-  freemoon = await FREEMOON.new(
+  freemoon = await Freemoon.new(
     "Freemoon Token",
     "FREEMOON",
     18,
     governance,
-    faucet.address
+    faucet.address,
+    {from: freeHolder}
   )
 }
 
-const initialize = async () => {
-  await faucet.initialize(free.address, freemoon.address, {from: coordinator})
+const setAssets = async () => {
+  await faucet.setAssets(free.address, freemoon.address, {from: admin})
 }
 
 const setTimes = async () => {
@@ -123,9 +133,11 @@ contract("The FREEMOON Faucet", async () => {
 
   // INITIAL VALUES
   it("Should set the correct addresses for coordinator and governance", async () => {
+    const adminSet = await faucet.admin()
     const coordinatorSet = await faucet.coordinator()
     const governanceSet = await faucet.governance()
 
+    expect(adminSet).to.equal(admin)
     expect(coordinatorSet).to.equal(coordinator)
     expect(governanceSet).to.equal(governance)
   })
@@ -162,25 +174,46 @@ contract("The FREEMOON Faucet", async () => {
 
 
   // ADDRESS RESTRICTIONS
-  it("Should allow coordinator address to call initialize", async () => {
-    await truffleAssert.passes(faucet.initialize(free.address, freemoon.address, {from: coordinator}))
+  it("Should allow admin address to call setAssets", async () => {
+    await truffleAssert.passes(faucet.setAssets(free.address, freemoon.address, {from: admin}))
   })
 
-  it("Should not allow non-coordinator address to call initialize", async () => {
+  it("Should not allow non-admin address to call setAssets", async () => {
     await truffleAssert.fails(
-      faucet.initialize(free.address, freemoon.address, {from: user}),
+      faucet.setAssets(free.address, freemoon.address, {from: user}),
       truffleAssert.ErrorType.REVERT,
-      "FREEMOON: Only coordinator can call this function."
+      "FREEMOON: Assets can only be set by admin."
+    )
+  })
+
+  it("Should only allow setAssets to be called once", async () => {
+    await faucet.setAssets(free.address, freemoon.address, {from: admin})
+    
+    await truffleAssert.fails(
+      faucet.setAssets(free.address, freemoon.address, {from: admin}),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Assets can only ever be set once."
     )
   })
 
   it("Should only allow initialize to be called once", async () => {
-    await faucet.initialize(free.address, freemoon.address, {from: coordinator})
+    const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, categories, odds } = config()
 
     await truffleAssert.fails(
-      faucet.initialize(free.address, freemoon.address, {from: coordinator}),
+      faucet.initialize(
+        admin,
+        coordinator,
+        governance,
+        subscriptionCost,
+        cooldownTime,
+        payoutThreshold,
+        payoutAmount,
+        categories,
+        odds,
+        {from: admin}
+      ),
       truffleAssert.ErrorType.REVERT,
-      "FREEMOON: Asset addresses can only ever be set once."
+      "FREEMOON: Faucet contract can only be initialized once."
     )
   })
 
@@ -192,19 +225,19 @@ contract("The FREEMOON Faucet", async () => {
     await truffleAssert.fails(
       faucet.updateParams(user, utils.toWei("2"), "86400", "24", utils.toWei("1"), {from: user}),
       truffleAssert.ErrorType.REVERT,
-      "FREEMOON: Only governance votes can update the faucet parameters."
+      "FREEMOON: Only the governance address can perform this operation."
     )
   })
 
 
   // SUBSCRIBING
   it("Should allow a valid address to subscribe to faucet", async () => {
-    await initialize()
+    await setAssets()
     await truffleAssert.passes(faucet.subscribe(user, {value: utils.toWei("1")}))
   })
 
   it("Should not allow an address overpaying or underpaying to subscribe", async () => {
-    await initialize()
+    await setAssets()
 
     await truffleAssert.fails(
       faucet.subscribe(user, {value: utils.toWei("1.1")}),
@@ -220,7 +253,7 @@ contract("The FREEMOON Faucet", async () => {
   })
 
   it("Should not allow a subscribed address to subscribe again", async () => {
-    await initialize()
+    await setAssets()
     await faucet.subscribe(user, {value: utils.toWei("1")})
     
     await truffleAssert.fails(
@@ -233,7 +266,7 @@ contract("The FREEMOON Faucet", async () => {
 
   // ENTERING
   it("Should allow a subscribed address to enter at a valid time, and receive 1 FREE", async () => {
-    await initialize()
+    await setAssets()
     await faucet.subscribe(user, {value: utils.toWei("1")})
     const freeBalBefore = Number(utils.fromWei(await free.balanceOf(user)))
 
@@ -244,14 +277,14 @@ contract("The FREEMOON Faucet", async () => {
   })
 
   it("Should emit the entry event for a valid address", async () => {
-    await initialize()
+    await setAssets()
     await faucet.subscribe(user, {value: utils.toWei("1")})
     const result = await faucet.enter(user)
     expect(result.logs[0].event).to.equal("Entry")
   })
 
   it("Should allow an address to enter again if it has waited the required cooldown period", async () => {
-    await initialize()
+    await setAssets()
     await faucet.subscribe(user, {value: utils.toWei("1")})
     await faucet.enter(user)
     await advanceBlockAtTime(fromNowOneHour)
@@ -260,7 +293,7 @@ contract("The FREEMOON Faucet", async () => {
   })
 
   it("Should not allow an address to enter if it has not waited the required cooldown period", async () => {
-    await initialize()
+    await setAssets()
     await faucet.subscribe(user, {value: utils.toWei("1")})
     await faucet.enter(user)
     
@@ -272,7 +305,7 @@ contract("The FREEMOON Faucet", async () => {
   })
 
   it("Should not allow an unsubscribed address to enter", async () => {
-    await initialize()
+    await setAssets()
     await truffleAssert.fails(
       faucet.enter(user),
       truffleAssert.ErrorType.REVERT,
@@ -283,7 +316,7 @@ contract("The FREEMOON Faucet", async () => {
 
   // COORDINATOR EVENT LISTENER
   it("Should enter the entry into the draw", async () => {
-    await initialize()
+    await setAssets()
     await faucet.subscribe(user, {value: utils.toWei("1")})
     const { txHash, blockHash } = utils.getHashes(await faucet.enter(user))
 
@@ -293,24 +326,24 @@ contract("The FREEMOON Faucet", async () => {
 
   // WINNING THE DRAW
   it("Should emit \"Win\" event and change odds by 10% on lottery win", async () => {
-    await initialize()
-    await faucet.subscribe(freeHolder1, {from: freeHolder1, value: utils.toWei("1")})
-    const { txHash, blockHash } = utils.getHashes(await faucet.enter(freeHolder1, {from: freeHolder1}))
-    const result = await enterIntoDraw(freeHolder1, 7, txHash, blockHash)
+    await setAssets()
+    await faucet.subscribe(freeHolder, {from: freeHolder, value: utils.toWei("1")})
+    const { txHash, blockHash } = utils.getHashes(await faucet.enter(freeHolder, {from: freeHolder}))
+    const result = await enterIntoDraw(freeHolder, 7, txHash, blockHash)
 
     expect(result.logs[0].event).to.equal("Win")
   })
 
   it("Should award 1 FREEMOON after winning the lottery", async () => {
-    await initialize()
-    await faucet.subscribe(freeHolder1, {from: freeHolder1, value: utils.toWei("1")})
-    const { txHash, blockHash } = utils.getHashes(await faucet.enter(freeHolder1, {from: freeHolder1}))
-    const freemoonBalBefore = Number(utils.fromWei(await freemoon.balanceOf(freeHolder1)))
-    const result = await enterIntoDraw(freeHolder1, 7, txHash, blockHash)
+    await setAssets()
+    await faucet.subscribe(freeHolder, {from: freeHolder, value: utils.toWei("1")})
+    const { txHash, blockHash } = utils.getHashes(await faucet.enter(freeHolder, {from: freeHolder}))
+    const freemoonBalBefore = Number(utils.fromWei(await freemoon.balanceOf(freeHolder)))
+    const result = await enterIntoDraw(freeHolder, 7, txHash, blockHash)
 
     expect(result.logs[0].event).to.equal("Win")
 
-    const freemoonBalAfter = Number(utils.fromWei(await freemoon.balanceOf(freeHolder1)))
+    const freemoonBalAfter = Number(utils.fromWei(await freemoon.balanceOf(freeHolder)))
 
     expect(freemoonBalAfter).to.equal(freemoonBalBefore + 1)
   })
@@ -318,10 +351,10 @@ contract("The FREEMOON Faucet", async () => {
 
   // LOSING THE DRAW
   it("Should emit \"Loss\" event on lottery loss", async () => {
-    await initialize()
-    await faucet.subscribe(freeHolder1, {from: freeHolder1, value: utils.toWei("1")})
-    const { txHash, blockHash } = utils.getHashes(await faucet.enter(freeHolder1, {from: freeHolder1}))
-    const result = await enterIntoDraw(freeHolder1, 0, txHash, blockHash)
+    await setAssets()
+    await faucet.subscribe(freeHolder, {from: freeHolder, value: utils.toWei("1")})
+    const { txHash, blockHash } = utils.getHashes(await faucet.enter(freeHolder, {from: freeHolder}))
+    const result = await enterIntoDraw(freeHolder, 0, txHash, blockHash)
 
     expect(result.logs[0].event).to.equal("Loss")
   })

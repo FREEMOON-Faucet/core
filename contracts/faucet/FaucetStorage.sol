@@ -11,9 +11,9 @@ contract FaucetStorage is FSNContract {
     IFREE free;
     IFREEMOON freemoon;
 
-    address admin;
-    address coordinator;
-    address governance;
+    address public admin;
+    address public coordinator;
+    address public governance;
 
     bool initialized;
     bool assetsInitialized;

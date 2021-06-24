@@ -7,21 +7,21 @@ import "./FaucetStorage.sol";
 contract FaucetProxy is FaucetStorage {
 
     address upgradeAdmin;
-    address public faucetAddress;
+    address public currentFaucet;
 
-    constructor(address _initial, address _upgradeAdmin) {
-        faucetAddress = _initial;
-        upgradeAdmin = _upgradeAdmin;
+    constructor(address _initial) {
+        upgradeAdmin = msg.sender;
+        currentFaucet = _initial;
     }
 
     function upgradeFaucet(address _newFaucet) public {
         require(msg.sender == upgradeAdmin, "FREEMOON: Invalid address attempting upgrade.");
-        faucetAddress = _newFaucet;
+        currentFaucet = _newFaucet;
     }
 
-    fallback() external {
-        address implementation = faucetAddress;
-        require(faucetAddress != address(0));
+    fallback() external payable {
+        address implementation = currentFaucet;
+        require(currentFaucet != address(0));
         bytes memory data = msg.data;
 
         assembly {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.5;
 
-import "./FaucetStorage.sol";
+import "../faucet/FaucetStorage.sol";
 
 /**
  * @title The FREEMOON Faucet
@@ -12,7 +12,7 @@ import "./FaucetStorage.sol";
  * @notice With every claim, the address gets entered into a lottery to win a rare FREEMOON token.
  * @notice The odds of winning this lottery are determined by FREE balance, more FREE merits increased odds of winning. 
  */
-contract Faucet is FaucetStorage {
+contract MockUpgradeable is FaucetStorage {
 
     modifier isNotPaused(string memory _feature) {
         require(!isPaused[_feature], "FREEMOON: This function is currently paused.");
