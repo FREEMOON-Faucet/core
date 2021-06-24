@@ -218,12 +218,12 @@ contract("The FREEMOON Faucet", async () => {
   })
 
   it("Should allow governance address to update faucet parameters", async () => {
-    await truffleAssert.passes(faucet.updateParams(user, utils.toWei("2"), "86400", "24", utils.toWei("1"), {from: governance}))
+    await truffleAssert.passes(faucet.updateParams(user, admin, utils.toWei("2"), "86400", "24", utils.toWei("1"), {from: governance}))
   })
 
   it("Should not allow non-governance address to update faucet parameters", async () => {
     await truffleAssert.fails(
-      faucet.updateParams(user, utils.toWei("2"), "86400", "24", utils.toWei("1"), {from: user}),
+      faucet.updateParams(user, admin, utils.toWei("2"), "86400", "24", utils.toWei("1"), {from: user}),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: Only the governance address can perform this operation."
     )

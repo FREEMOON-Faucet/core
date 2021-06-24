@@ -98,7 +98,7 @@ const testTimelockSwap = async () => {
   startTlBal = utils.fromWei(await web3fsn.fsn.getTimeLockBalance(FSN, coordinator))
   
   await faucet.subscribe({from: coordinator, value: utils.toWei("0.00001")})
-  await faucet.swapTimelockForFree({from: coordinator, value: utils.toWei("2")})
+  await faucet.timelockToFree({from: coordinator, value: utils.toWei("2")})
 
   endBal = utils.fromWei(await web3fsn.fsn.getBalance(FSN, coordinator))
   endTlBal = utils.fromWei(await web3fsn.fsn.getTimeLockBalance(FSN, coordinator))

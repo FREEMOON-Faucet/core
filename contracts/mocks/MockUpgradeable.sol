@@ -97,7 +97,7 @@ contract MockUpgradeable is FaucetStorage {
      * @notice Buy FREE with TL FSN.
      * @notice The conversion is 1 4-month TL FSN => 50 FREE.
      */
-    function swapTimelockForFree() public payable isNotPaused("swapTimelockForFree") {
+    function timelockToFree() public payable isNotPaused("timelockToFree") {
         require(isSubscribed[msg.sender], "FREEMOON: Only subscribed addresses can swap TL FSN for FREE.");
         uint64 fourMonthsFromNow = uint64(block.timestamp) + FOUR_MONTHS;
         uint256[] memory extra;
@@ -139,7 +139,7 @@ contract MockUpgradeable is FaucetStorage {
      *
      * @dev Each time an "Entry" event is emitted, the parameters of the event get fed back into this function to check for a win.
      */
-    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public {
+    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public isNotPaused("resolveEntry") {
         require(msg.sender == coordinator, "FREEMOON: Only coordinator can resolve entries.");
         bool win = checkIfWin(_lottery, _tx ,_block);
         if(win) {
@@ -149,23 +149,6 @@ contract MockUpgradeable is FaucetStorage {
         } else {
           emit Loss(_account, _lottery, _tx, _block);
         }
-    }
-    
-    /**
-     * @notice Update the parameters around which the faucet operates. Only possible from governance vote.
-     *
-     * @param _coordinator The address of the faucet coordinator.
-     * @param _subscriptionCost The cost of subscribing in FSN.
-     * @param _cooldownTime The time in seconds an address has to wait before entering the FREEMOON draw again.
-     * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
-     * @param _payoutAmount The current amount of FREE payed to addresses who claim.
-     */
-    function updateParams(address _coordinator, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount) public onlyGov {
-        coordinator = _coordinator;
-        subscriptionCost = _subscriptionCost;
-        cooldownTime = _cooldownTime;
-        payoutThreshold = _payoutThreshold;
-        payoutAmount = _payoutAmount;
     }
 
     /**

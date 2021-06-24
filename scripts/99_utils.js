@@ -25,10 +25,28 @@ const impersonate = async () => {
   console.log(whale)
 }
 
+async function throwsError(promise) {
+  console.log("here")
+  let msg = 'No Exception'
+  try {
+    await promise
+  } catch(e) {
+    msg = e.message
+  }
+  return (
+    msg.includes('Transaction reverted') ||
+    msg.includes('VM Exception while processing transaction: revert') ||
+    msg.includes('invalid opcode') ||
+    msg.includes('exited with an error (status 0)')
+  )
+}
+
+
 
 module.exports = {
   toWei,
   fromWei,
   getHashes,
-  impersonate
+  impersonate,
+  throwsError
 }
