@@ -34,4 +34,8 @@ contract FaucetProxy is FaucetStorage {
             default {return(ptr, size)}
         }
     }
+
+    receive() external payable {
+        require(msg.sender == upgradeAdmin, "FREEMOON: Restricted");
+    }
 }

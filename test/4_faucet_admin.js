@@ -98,9 +98,6 @@ const setAssets = async () => {
 
 
 contract("Freemoon Faucet Upgradeability Tests", async () => {
-  // beforeEach("Re-deploy all, set start time", async () => {
-  //   await setUp()
-  // })
 
   it("Should allow deployment of the incorrect contract", async () => {
     [ coordinator, governance, admin, user, airdrop ] = await web3.eth.getAccounts()

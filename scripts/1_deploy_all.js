@@ -1,20 +1,15 @@
+const FaucetProxy = artifacts.require("FaucetProxy")
 const Faucet = artifacts.require("Faucet")
 const FREE = artifacts.require("FREE")
 const FREEMOON = artifacts.require("FREEMOON")
 
+const utils = require("./99_utils")
 
-let coordinator, governance, user
-let faucet, free, freemoon
+
+let admin, coordinator, governance
+let faucet, faucetLayout, faucetProxy
+let free, freemoon
 let categories, odds
-let fromNowOneHour, startTime, newTime
-
-const toWei = val => {
-  return web3.utils.toWei(val, "ether")
-}
-  
-const fromWei = val => {
-  return web3.utils.fromWei(val)
-}
 
 const config = () => {
 
@@ -41,56 +36,43 @@ const config = () => {
   ]
 
   return {
-    subscriptionCost: toWei("1"), // 1 FSN
+    subscriptionCost: utils.toWei("1"), // 1 FSN
     cooldownTime: "3600", // 1 hour
     payoutThreshold: "1", // 1 entry == receive FREE
-    payoutAmount: toWei("1"), // 1 FREE
-    categories: categories.map(cat => toWei(cat)), // balances required for each FREEMOON lottery category
+    payoutAmount: utils.toWei("1"), // 1 FREE
+    categories: categories.map(cat => utils.toWei(cat)), // balances required for each FREEMOON lottery category
     odds: odds // odds of winning for each category
   }
 }
 
-const setTimes = async () => {
-  startTime = await web3.eth.getBlock("latest")
-  startTime = startTime.timestamp
-
-  fromNowOneHour = startTime + 3605
-}
-
-const advanceBlockAtTime = async time => {
-  await web3.currentProvider.send(
-    {
-      jsonrpc: "2.0",
-      method: "evm_mine",
-      params: [ time ],
-      id: new Date().getTime(),
-    },
-    (err, res) => {
-      if(err) {
-        newTime = err
-      }
-    }
-  )
-  const newBlock = await web3.eth.getBlock("latest")
-  newTime = newBlock.timestamp
+const logDeployed = (msg, addr) => {
+  if(addr) console.log(`${msg} ${addr}`)
+  else console.log(`${msg}`)
 }
 
 const deployAll = async () => {
-  [ owner, governance, user, airdrop ] = await web3.eth.getAccounts()
+  [ admin, coordinator, governance, airdrop ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, categories, odds } = config()
   
-  const faucet = await Faucet.new(
+  faucetLayout = await Faucet.new({from: admin})
+  faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
+  faucet = await Faucet.at(faucetProxy.address, {from: admin})
+  
+  await faucet.initialize(
+    admin,
+    coordinator,
     governance,
     subscriptionCost,
     cooldownTime,
     payoutThreshold,
     payoutAmount,
     categories,
-    odds,
-    {from: owner}
+    odds
   )
 
-  const free = await FREE.new(
+  logDeployed("FREEMOON-Faucet deployed at: ", faucet.address)
+
+  free = await FREE.new(
     "Free Token",
     "FREE",
     18,
@@ -99,13 +81,21 @@ const deployAll = async () => {
     faucet.address
   )
 
-  const freemoon = await FREEMOON.new(
+  logDeployed("FREE Token deployed at: ", free.address)
+
+  freemoon = await FREEMOON.new(
     "Freemoon Token",
     "FREEMOON",
     18,
     governance,
     faucet.address
   )
+
+  logDeployed("FREEMOON Token deployed at: ", freemoon.address)
+
+  await faucet.setAssets(free.address, freemoon.address, {from: admin})
+
+  logDeployed("FREE assets addresses set in faucet.")
 }
 
 deployAll()
