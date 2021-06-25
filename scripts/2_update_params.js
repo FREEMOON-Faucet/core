@@ -15,8 +15,8 @@ const logDeployed = (msg, addr) => {
 const config = {
   admin: "",  // The new admin address
   coordinator: "",  // The new coordinator address
-  subscriptionCost: "",  // The new subscription cost in FSN
-  cooldownTime: "",  // The new cooldown time, ie. time subscriber must wait before entering again
+  subscriptionCost: "2",  // The new subscription cost in FSN
+  cooldownTime: "86400",  // The new cooldown time, ie. time subscriber must wait before entering again
   payoutThreshold: "",  // The new payout threshold, ie. the amount of times a subscriber must enter before being awarded FREE
   payoutAmount: ""  // The new payout amount, ie. the amount of FREE a subscriber is awarded upon reaching the payout threshold
 }

@@ -25,7 +25,7 @@ const setPause = async (pause, list) => {
 }
 
 setPause(
-  true, // Set to true to pause, false to unpause
+  false, // Set to true to pause, false to unpause
 
   // List of function names to pause/unpause
   [
