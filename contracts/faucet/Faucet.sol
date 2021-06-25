@@ -160,9 +160,9 @@ contract Faucet is FaucetStorage {
      * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
      * @param _payoutAmount The current amount of FREE payed to addresses who claim.
      */
-    function updateParams(address _coordinator, address _admin, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount) public onlyGov {
-        coordinator = _coordinator;
+    function updateParams(address _admin, address _coordinator, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount) public onlyGov {
         admin = _admin;
+        coordinator = _coordinator;
         subscriptionCost = _subscriptionCost;
         cooldownTime = _cooldownTime;
         payoutThreshold = _payoutThreshold;

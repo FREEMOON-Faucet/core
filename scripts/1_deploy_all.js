@@ -54,48 +54,71 @@ const deployAll = async () => {
   [ admin, coordinator, governance, airdrop ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, categories, odds } = config()
   
-  faucetLayout = await Faucet.new({from: admin})
-  faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
-  faucet = await Faucet.at(faucetProxy.address, {from: admin})
+  try {
+    faucetLayout = await Faucet.new({from: admin})
+    faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
+    faucet = await Faucet.at(faucetProxy.address, {from: admin})
+
+    logDeployed("FREEMOON-Faucet deployed at: ", faucet.address)
+    logDeployed("Proxy deployed at:", faucetProxy.address)
+  } catch(err) {
+    logDeployed("FREEMOON-Faucet deployment unsuccessful:", err.message)
+  }
   
-  await faucet.initialize(
-    admin,
-    coordinator,
-    governance,
-    subscriptionCost,
-    cooldownTime,
-    payoutThreshold,
-    payoutAmount,
-    categories,
-    odds
-  )
+  try {
+    await faucet.initialize(
+      admin,
+      coordinator,
+      governance,
+      subscriptionCost,
+      cooldownTime,
+      payoutThreshold,
+      payoutAmount,
+      categories,
+      odds
+    )
 
-  logDeployed("FREEMOON-Faucet deployed at: ", faucet.address)
+    logDeployed("Faucet initialized successfully.")
+  } catch(err) {
+    logDeployed("Faucet initialization unsuccessful:", err.message)
+  }
 
-  free = await FREE.new(
-    "Free Token",
-    "FREE",
-    18,
-    governance,
-    airdrop,
-    faucet.address
-  )
+  try {
+    free = await FREE.new(
+      "Free Token",
+      "FREE",
+      18,
+      governance,
+      airdrop,
+      faucet.address
+    )
 
-  logDeployed("FREE Token deployed at: ", free.address)
+    logDeployed("FREE Token deployed at: ", free.address)
+  } catch(err) {
+    logDeployed("FREE Token deployment unsuccessful:", err.message)
+  }
 
-  freemoon = await FREEMOON.new(
-    "Freemoon Token",
-    "FREEMOON",
-    18,
-    governance,
-    faucet.address
-  )
+  try {
+    freemoon = await FREEMOON.new(
+      "Freemoon Token",
+      "FREEMOON",
+      18,
+      governance,
+      faucet.address
+    )
 
-  logDeployed("FREEMOON Token deployed at: ", freemoon.address)
+    logDeployed("FREEMOON Token deployed at: ", freemoon.address)
+  } catch(err) {
+    logDeployed("FREEMOON Token deployment unsuccessful:", err.message)
+  }
 
-  await faucet.setAssets(free.address, freemoon.address, {from: admin})
+  try {
+    await faucet.setAssets(free.address, freemoon.address, {from: admin})
 
-  logDeployed("FREE assets addresses set in faucet.")
+    logDeployed("Set FREE asset addresses in faucet successfully.")
+  } catch(err) {
+    logDeployed("Set FREE asset addresses in faucet unsuccessful:", err.message)
+  }
 }
 
 deployAll()

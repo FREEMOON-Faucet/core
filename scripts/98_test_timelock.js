@@ -1,5 +1,4 @@
-const web3FusionExtend = require('web3-fusion-extend')
-
+const FaucetProxy = artifacts.require("FaucetProxy")
 const Faucet = artifacts.require("Faucet")
 const FREE = artifacts.require("FREE")
 const FREEMOON = artifacts.require("FREEMOON")
@@ -7,11 +6,9 @@ const FREEMOON = artifacts.require("FREEMOON")
 const utils = require("./99_utils")
 
 
-const web3fsn = web3FusionExtend.extend(web3)
-const FSN = web3fsn.fsn.consts.FSN
-
-let coordinator, governance, user
-let faucet, free, freemoon
+let admin, coordinator, governance
+let faucet, faucetLayout, faucetProxy
+let free, freemoon
 let categories, odds
 let startBal, startTlBal, endBal, endTlBal
 
@@ -36,11 +33,11 @@ const config = () => {
     "1000000",
     "500000",
     "250000",
-    "1" // 100% chance of winning for testing only
+    "100000"
   ]
 
   return {
-    subscriptionCost: utils.toWei("0.00001"),
+    subscriptionCost: utils.toWei("1"), // 1 FSN
     cooldownTime: "3600", // 1 hour
     payoutThreshold: "1", // 1 entry == receive FREE
     payoutAmount: utils.toWei("1"), // 1 FREE
@@ -49,11 +46,22 @@ const config = () => {
   }
 }
 
-const setUp = async () => {
-  [ coordinator, governance, user, airdrop, freeHolder1 ] = await web3.eth.getAccounts()
+const logDeployed = (msg, addr) => {
+  if(addr) console.log(`${msg} ${addr}`)
+  else console.log(`${msg}`)
+}
+
+const deployAll = async () => {
+  [ admin, coordinator, governance, airdrop ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, categories, odds } = config()
   
-  faucet = await Faucet.new(
+  faucetLayout = await Faucet.new({from: admin})
+  faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
+  faucet = await Faucet.at(faucetProxy.address, {from: admin})
+  
+  await faucet.initialize(
+    admin,
+    coordinator,
     governance,
     subscriptionCost,
     cooldownTime,
@@ -62,6 +70,8 @@ const setUp = async () => {
     categories,
     odds
   )
+
+  logDeployed("FREEMOON-Faucet deployed at: ", faucet.address)
 
   free = await FREE.new(
     "Free Token",
@@ -72,6 +82,8 @@ const setUp = async () => {
     faucet.address
   )
 
+  logDeployed("FREE Token deployed at: ", free.address)
+
   freemoon = await FREEMOON.new(
     "Freemoon Token",
     "FREEMOON",
@@ -80,19 +92,16 @@ const setUp = async () => {
     faucet.address
   )
 
-  console.log("FREE: ", free.address)
-  console.log("FREEMOON: ", freemoon.address)
-  console.log("Faucet: ", faucet.address)
-}
+  logDeployed("FREEMOON Token deployed at: ", freemoon.address)
 
-const initialize = async () => {
-  await faucet.initialize(free.address, freemoon.address, {from: coordinator})
+  await faucet.setAssets(free.address, freemoon.address, {from: admin})
+
+  logDeployed("FREE assets addresses set in faucet.")
 }
 
 
 const testTimelockSwap = async () => {
-  await setUp()
-  await initialize()
+  deployAll()
 
   startBal = utils.fromWei(await web3fsn.fsn.getBalance(FSN, coordinator))
   startTlBal = utils.fromWei(await web3fsn.fsn.getTimeLockBalance(FSN, coordinator))
