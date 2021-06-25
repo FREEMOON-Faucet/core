@@ -172,13 +172,13 @@ contract Faucet is FaucetStorage {
     /**
      * @notice Pause specific features of the contract in case of an emergency.
      *
-     * @param _status Whether the intention is to "pause" or "unpause" the specified functions.
+     * @param _pause Whether the intention is to "pause" or "unpause" the specified functions.
      * @param _toSet The list of functions that will be affected by this action.
      */
-    function setPause(bool _status, string[] memory _toSet) public onlyGov {
+    function setPause(bool _pause, string[] memory _toSet) public onlyGov {
         for(uint8 i = 0; i < _toSet.length; i++) {
-            if(isPaused[_toSet[i]] != _status) {
-                isPaused[_toSet[i]] = _status;
+            if(isPaused[_toSet[i]] != _pause) {
+                isPaused[_toSet[i]] = _pause;
             } else {
                 continue;
             }
