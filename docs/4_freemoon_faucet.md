@@ -1,4 +1,4 @@
-## The FREE Faucet
+## The FREEMOON Faucet
 
 ### **Functions**
 
@@ -28,7 +28,26 @@
 
 ---
 
-Outline ...
+The FREEMOON Faucet allows users to farm FREE, and in very rare occasions, win FREEMOON.
+
+FREE can be obtained from the faucet in the following ways:
+
+1. Subscribing: Subscribing costs a small lifetime fee and allows the address subscribed to enter the FREEMOON lottery once every hour. Entering the lottery nets the subscriber 1 FREE.
+2. Swapping Timelock: Subscribers may also obtain FREE by swapping the next 4 month portion of their FSN for FREE. The rate is 1 4-month TL FSN => 1 FREE.
+
+The odds of winning 1 FREEMOON depend on the subscriber's FREE balance. The higher the balance, the higher the odds. The following displays the lottery categories, and the FREE balances required for each:
+
+| FREE Balance | Odds (1 in) |
+| :---: | :---: |
+| <1 | 0 |
+| 1 - 100 | 1 000 000 000 |
+| 100 - 1 000 | 100 000 000 |
+| 1 000 - 10 000 | 10 000 000 |
+| 10 000 - 25 000 | 1 000 000 |
+| 25 000 - 50 000 | 500 000 |
+| 50 000 - 100 000 | 250 000 |
+| >100 000 | 100 000 |
+
 
 #### Functions
 
@@ -48,7 +67,7 @@ Outline ...
 
 | **`enter(_entrant)`** |
 | :-- |
-| Enters the given address **`_entrant`** into the FREEMOON draw. Address must be subscribed to the FREE Faucet. |
+| Enters the given address **`_entrant`** into the FREEMOON draw. Address must be subscribed to the FREEMOON Faucet. |
 
 | **`resolveEntry(_account, _lottery, _tx, _block)`** |
 | :-- |
