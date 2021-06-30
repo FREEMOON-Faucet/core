@@ -78,10 +78,7 @@ Users can now request gas, once a day, for new wallets only. Users cannot make m
 To make a request, in a terminal, run:
 
 ```bash
-curl --location --request POST 'http://164.68.100.146:3001/api/v1/retrieve' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "walletAddress": "<ADDRESS>" }'
+curl --location --request POST 'http://164.68.100.146:3001/api/v1/retrieve' --header 'Content-Type: application/json' --data-raw '{"walletAddress": "0xabcdef"}'
 ```
 
-Where \<ADDRESS\> gets replace with the address to be funded.
+Where 0xabcdef gets replaced with the address to be funded.
