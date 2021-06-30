@@ -54,3 +54,21 @@ To pause/unpause functions, run:
 ```bash
 npx hardhat run scripts/4_pause.js
 ```
+
+## FSN Faucet
+
+To run FSN Faucet on Fusion Testnet, add FSN supplier hot wallet private key to .env file:
+
+```
+PRIVATE_KEY="0xaaaaa"
+```
+
+Make sure port 3001 is open.
+
+Run:
+
+```bash
+npm start
+```
+
+Users can now request gas, once a day, for new wallets only. Users cannot make more than 1 request per day, from any IP address.

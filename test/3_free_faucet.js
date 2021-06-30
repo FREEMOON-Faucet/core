@@ -328,8 +328,21 @@ contract("The FREEMOON Faucet", async () => {
   it("Should emit \"Win\" event and change odds by 10% on lottery win", async () => {
     await setAssets()
     await faucet.subscribe(freeHolder, {from: freeHolder, value: utils.toWei("1")})
+
+    let oddsBefore = []
+    for(let i = 0; i < 8; i++) {
+      oddsBefore.push((await faucet.odds(i)).toNumber())
+    }
+    console.log(oddsBefore)
+
     const { txHash, blockHash } = utils.getHashes(await faucet.enter(freeHolder, {from: freeHolder}))
     const result = await enterIntoDraw(freeHolder, 7, txHash, blockHash)
+
+    let oddsAfter = []
+    for(let i = 0; i < 8; i++) {
+      oddsAfter.push((await faucet.odds(i)).toNumber())
+    }
+    console.log(oddsAfter)
 
     expect(result.logs[0].event).to.equal("Win")
   })
