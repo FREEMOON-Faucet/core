@@ -60,7 +60,8 @@ npx hardhat run scripts/4_pause.js
 To run FSN Faucet on Fusion Testnet, add FSN supplier hot wallet private key to .env file:
 
 ```
-PRIVATE_KEY="0xaaaaa"
+PRIVATE_KEY=0xaaaaa
+DB_PASSWORD=0xbbbbb
 ```
 
 Make sure port 3001 is open.
@@ -78,7 +79,7 @@ Users can now request gas, once a day, for new wallets only. Users cannot make m
 To make a request, in a terminal, run:
 
 ```bash
-curl --location --request POST 'http://164.68.100.146:3001/api/v1/retrieve' --header 'Content-Type: application/json' --data-raw '{"walletAddress": "0xabcdef"}'
+curl --location --request POST 'http://207.180.248.107:3001/api/v1/retrieve' --header 'Content-Type: application/json' --data-raw '{"walletAddress": "0xabcdef"}'
 ```
 
 Where 0xabcdef gets replaced with the address to be funded.
