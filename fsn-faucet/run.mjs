@@ -118,9 +118,12 @@ app.post("/api/v1/retrieve", async (req, res) => {
         // ipAddress, walletAddress -> date (person can only do the faucet every 7 days)
         // const SEVEN_DAYS = moment().subtract("7", "days").toDate()
         const ONE_DAY = moment().subtract("1", "days").toDate()
+        
         let walletAppliedRecently = await Address.findOne({
-            walletAddress,
-            lastVisit: { $gte: ONE_DAY },
+            walletAddress
+        }).lean()
+
+        let ipRecent = await Address.findOne({
             ipAddress,
             lastVisit: { $gte: ONE_DAY },
         }).lean()
