@@ -94,7 +94,7 @@ const payoutFSN = async addr => {
         const sent = await web3.eth.sendSignedTransaction(rawTx.rawTransaction)
         return sent
     } catch(err) {
-        throw new Error("Sending faucet gas failed: ", err)
+        throw new Error("Sending faucet gas failed: ", err.message)
     }
 }
 
@@ -109,7 +109,7 @@ app.post("/api/v1/retrieve", async (req, res) => {
 
         // Let's check if the walletAddress is actually valid
         if (!web3.utils.isAddress(walletAddress)) {
-            throw new Error("Walletaddress does not appear to be valid.")
+            throw new Error("Wallet address does not appear to be valid.")
         }
 
         // Let's filter out the real ip address from the headers
@@ -131,12 +131,12 @@ app.post("/api/v1/retrieve", async (req, res) => {
         let bal = Number(web3.utils.fromWei(await web3.eth.getBalance(walletAddress)))
         let txCount = await web3.eth.getTransactionCount(walletAddress)
 
-        if (walletAppliedRecently) {
-            throw new Error("Address has already claimed FSN.")
+        if(walletAppliedRecently) {
+            throw new Error("Address has already claimed gas.")
         } else if(ipRecent) {
-            throw new Error("User has already claimed FSN for an address recently.")
+            throw new Error("Your IP has already claimed gas for an address recently.")
         } else if(txCount !== 0) {
-            throw new Error("This wallet address is not an empty account")
+            throw new Error("Must be a new, unused address.")
         } else if(bal) {
             throw new Error("Address has a non-zero balance.")
         }    
@@ -155,7 +155,7 @@ app.post("/api/v1/retrieve", async (req, res) => {
 
         return res.json({
             txHash,
-            status: "success",
+            status: `Success. Gas will be sent to ${walletAddress} shortly.`,
         })
     } catch(err) {
         console.error(err.message)
