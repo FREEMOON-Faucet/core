@@ -143,6 +143,7 @@ app.post("/api/v1/retrieve", async (req, res) => {
 
         // Let's execute the payout
         let txHash = await payoutFSN(walletAddress)
+        txHash = txHash.transactionHash
 
         await Address.updateOne(
             {
