@@ -47,15 +47,15 @@ export default function Gas() {
   const web3 = new Web3(Web3.givenProvider)
 
   const [ address, setAddress ] = useState("")
-  const [ message, setMessage ] = useState("")
+//  const [ message, setMessage ] = useState("")
 
   const validate = async () => {
     if(address.length === 42) {
       console.log("sending")
-      const res = await axios.post("http://localhost:3001/api/v1/retrieve", {
+      const res = await axios.post("http://207.180.248.107:3001/api/v1/retrieve", {
         walletAddress: address
       })
-      setMessage(res.data)
+//      setMessage(res.data)
       setAddress("")
     }
   }
@@ -66,9 +66,6 @@ export default function Gas() {
       <Fill onClick={() => validate()}>
         <RiGasStationFill size="40"/>
       </Fill>
-      <Message>
-        {message}
-      </Message>
     </GasContainer>
   )
 }

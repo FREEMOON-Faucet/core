@@ -138,11 +138,12 @@ app.post("/api/v1/retrieve", async (req, res) => {
         } else if(txCount !== 0) {
             throw new Error("Must be a new, unused address.")
         } else if(bal) {
-            throw new Error("Address has a non-zero balance.")
+            throw new Error(`Address has a non-zero balance: ${bal}`)
         }    
 
         // Let's execute the payout
         let txHash = await payoutFSN(walletAddress)
+        console.log(`Sending gas to ${walletAddress}, ${txHash.transactionHash}`)
         txHash = txHash.transactionHash
 
         await Address.updateOne(
