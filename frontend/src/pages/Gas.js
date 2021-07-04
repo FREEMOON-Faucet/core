@@ -32,7 +32,7 @@ const Bar = styled.div`
 
   @media screen and (orientation: portrait) {
     flex-direction: column;
-    width: 60%;
+    width: 80%;
     height: 100px;
   }
 `
@@ -80,7 +80,7 @@ const Message = styled.div`
 const Detail = styled.p`
   display: flex;
   justify-content: center;
-  width: 60%;
+  width: 70%;
   margin: 20px 0;
   font-size: 1.2rem;
   text-align: center;
@@ -109,7 +109,7 @@ export default function Gas({ provider }) {
         setMessage(`Success. Transaction hash: ${response.data.txHash}`)
       } catch(err) {
         if(err.response) setMessage(err.response.data)
-        else setMessage(`Too many requests, try again later.`)
+        else setMessage(`Failed to connect to faucet.`)
       }
     }
   }

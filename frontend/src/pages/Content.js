@@ -12,7 +12,7 @@ export default function Content({ display, provider }) {
   if(display === 0) {
     return (
       <ContentContainer>
-        <Gas provider={provider} />
+        <Gas provider={provider}/>
       </ContentContainer>
     )
   } else if(display === 1) {

@@ -56,7 +56,7 @@ const Nav = styled.ul`
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    width: 50%;
+    width: 80%;
     height: 200px;
   }
 `
@@ -117,9 +117,9 @@ function App() {
 
   return (
     <AppContainer>
-      <GlobalStyle />
+      <GlobalStyle/>
       <Header>
-        <Logo src={logo} alt="The FREEMOON Faucet" />
+        <Logo src={logo} alt="The FREEMOON Faucet"/>
         <Title>
           The FREEMOON Faucet
         </Title>
@@ -134,7 +134,7 @@ function App() {
         <Tab active={active === 3} onClick={() => setActive(3)}>Bot Army</Tab>
         <Tab active={false} wallet={true} connected={accounts.length > 0} onClick={() => checkConnect() ? connect() : ""}><FaPlug size={25}/></Tab>
       </Nav>
-      <Content display={active} provider={{ accounts: accounts, web3: provider }} />
+      <Content display={active} provider={{ accounts: accounts, web3: provider }}/>
     </AppContainer>
   );
 }
