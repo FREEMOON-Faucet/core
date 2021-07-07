@@ -1,4 +1,5 @@
 const { expect } = require("chai")
+const BigNumber = require("bignumber.js")
 const truffleAssert = require("truffle-assertions")
 
 const Faucet = artifacts.require("Faucet")
@@ -166,7 +167,7 @@ contract("The FREEMOON Faucet", async () => {
   })
 
   it("Should set correct odds", async () => {
-    for(let i = 0; i < 8; i++) {
+    for(let i = 0; i < 7; i++) {
       let odd = (await faucet.odds(i)).toString()
       expect(odd).to.equal(odds[i])
     }
@@ -333,7 +334,6 @@ contract("The FREEMOON Faucet", async () => {
     for(let i = 0; i < 8; i++) {
       oddsBefore.push((await faucet.odds(i)).toNumber())
     }
-    console.log(oddsBefore)
 
     const { txHash, blockHash } = utils.getHashes(await faucet.enter(freeHolder, {from: freeHolder}))
     const result = await enterIntoDraw(freeHolder, 7, txHash, blockHash)
@@ -342,7 +342,9 @@ contract("The FREEMOON Faucet", async () => {
     for(let i = 0; i < 8; i++) {
       oddsAfter.push((await faucet.odds(i)).toNumber())
     }
-    console.log(oddsAfter)
+    for(let i = 0; i < 7; i++) { // ignoring the last category seeing as it is 1 in testing
+      expect(oddsAfter[i]).to.equal(BigNumber(oddsBefore[i]).multipliedBy("1.1").toNumber())
+    }
 
     expect(result.logs[0].event).to.equal("Win")
   })

@@ -30,6 +30,9 @@ contract FaucetStorage is FSNContract {
     uint256 public payoutThreshold;
     uint256 public payoutAmount;
 
+    uint256 public subscribers;
+    uint256 public winners;
+
     mapping(string => bool) isPaused;
 
     mapping(address => bool) public isSubscribed;

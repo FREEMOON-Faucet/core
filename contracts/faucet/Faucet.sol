@@ -91,6 +91,7 @@ contract Faucet is FaucetStorage {
         require(msg.value == subscriptionCost, "FREEMOON: Invalid FSN amount sent for subscription cost.");
         require(!isSubscribed[_account], "FREEMOON: Given address is already subscribed.");
         isSubscribed[_account] = true;
+        subscribers++;
     }
 
     /**
@@ -144,6 +145,7 @@ contract Faucet is FaucetStorage {
         bool win = checkIfWin(_lottery, _tx ,_block);
         if(win) {
             _updateOdds();
+            winners++;
             freemoon.rewardWinner(_account, _lottery);
             emit Win(_account, _lottery, _tx, _block);
         } else {

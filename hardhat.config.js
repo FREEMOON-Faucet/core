@@ -12,7 +12,7 @@ module.exports = {
       // }
     },
     fsnTestnet: {
-      url: "https://testnet.fsn.dev/api",
+      url: "https://testway.freemoon.xyz/gate",
       chainId: 46688,
       accounts: [ process.env.PRIVATE_KEY ]
     }
