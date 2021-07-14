@@ -33,7 +33,7 @@ contract FaucetStorage is FSNContract {
     uint256 public subscribers;
     uint256 public winners;
 
-    mapping(string => bool) isPaused;
+    mapping(string => bool) public isPaused;
 
     mapping(address => bool) public isSubscribed;
     mapping(address => uint256) public previousEntry;

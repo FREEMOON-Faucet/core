@@ -11,11 +11,11 @@ module.exports = {
       //   blockNumber: 4776000
       // }
     },
-    fsnTestnet: {
-      url: "https://testway.freemoon.xyz/gate",
-      chainId: 46688,
-      accounts: [ process.env.PRIVATE_KEY ]
-    }
+   fsnTestnet: {
+     url: "https://testway.freemoon.xyz/gate",
+     chainId: 46688,
+     accounts: [ process.env.PRIVATE_KEY ]
+   }
   },
   mocha: {
     timeout: 600000
