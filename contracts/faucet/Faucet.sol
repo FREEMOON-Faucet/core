@@ -140,7 +140,7 @@ contract Faucet is FaucetStorage {
      *
      * @dev Each time an "Entry" event is emitted, the parameters of the event get fed back into this function to check for a win.
      */
-    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public isNotPaused("resolveEntry") {
+    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public {
         require(msg.sender == coordinator, "FREEMOON: Only coordinator can resolve entries.");
         bool win = checkIfWin(_lottery, _tx ,_block);
         if(win) {
