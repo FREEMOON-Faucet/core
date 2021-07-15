@@ -23,6 +23,11 @@ contract MockUpgradeable is FaucetStorage {
         require(msg.sender == governance, "FREEMOON: Only the governance address can perform this operation.");
         _;
     }
+
+    modifier onlyAdmin {
+        require(msg.sender == admin, "FREEMOON: Only the admin address can perform this operation.");
+        _;
+    }
     
     /**
      * @notice On deployment, the initial faucet parameters are set.
@@ -36,6 +41,7 @@ contract MockUpgradeable is FaucetStorage {
      * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
      * @param _payoutAmount The current amount of FREE payed to addresses who claim.
      * @param _categories A list of the balances required to qualify for each category.
+     * @param _hotWalletLimit The maximum amount of FSN in the hot wallet.
      * @param _odds A list of odds of winning for each balance category.
      */
     function initialize(
@@ -46,6 +52,7 @@ contract MockUpgradeable is FaucetStorage {
         uint256 _cooldownTime,
         uint256 _payoutThreshold,
         uint256 _payoutAmount,
+        uint256 _hotWalletLimit,
         uint256[] memory _categories,
         uint256[] memory _odds
     ) public
@@ -58,6 +65,7 @@ contract MockUpgradeable is FaucetStorage {
         cooldownTime = _cooldownTime;
         payoutThreshold = _payoutThreshold;
         payoutAmount = _payoutAmount;
+        hotWalletLimit = _hotWalletLimit;
 
         for(uint8 ii = 0; ii < _categories.length; ii++) {
             categories[ii] = _categories[ii];
@@ -74,23 +82,26 @@ contract MockUpgradeable is FaucetStorage {
      *
      * @dev As the FREE and FREEMOON tokens require the faucet contract's address to deploy, their addresses are set after deployment.
      */
-    function setAssets(address _free, address _freemoon) public {
+    function setAssets(address _free, address _freemoon) public onlyAdmin {
         require(!assetsInitialized, "FREEMOON: Assets can only ever be set once.");
-        require(msg.sender == admin, "FREEMOON: Assets can only be set by admin.");
         free = IFREE(_free);
         freemoon = IFREEMOON(_freemoon);
         assetsInitialized = true;
     }
 
     /**
-     * @notice Subscribes the given address. Cost is in FSN.
+     * @notice Subscribes the given address. All FREE and FMN claimed with this address goes to its base address. Cost is in FSN.
      *
      * @param _account The address to subscribe.
      */
     function subscribe(address _account) public payable isNotPaused("subscribe") {
         require(msg.value == subscriptionCost, "FREEMOON: Invalid FSN amount sent for subscription cost.");
         require(!isSubscribed[_account], "FREEMOON: Given address is already subscribed.");
-        isSubscribed[_account] = true;
+        subscribedFor[_account] = msg.sender;
+        subscribers++;
+        if(coordinator.balance < hotWalletLimit) {
+            payable(coordinator).transfer(msg.value);
+        }
     }
 
     /**
@@ -108,25 +119,27 @@ contract MockUpgradeable is FaucetStorage {
     }
 
     /**
-     * @notice Enters a subscribed address into the FREEMOON draw.
+     * @notice Claims FREE for a given address and enters them into the FMN draw.
      *
-     * @param _entrant The address to enter. They must be subscribed to the faucet.
+     * @param _claimant The address to claim for. They must be subscribed to the faucet.
      */
-    function enter(address _entrant) public isNotPaused("enter") {
-        require(isSubscribed[_entrant], "FREEMOON: Only subscribed addresses can enter the draw.");
-        require(previousEntry[_entrant] + cooldownTime <= block.timestamp, "FREEMOON: You must wait for your cooldown to end before entering again.");
+    function claim(address _claimant) public isNotPaused("enter") {
+        require(isSubscribed[_claimant], "FREEMOON: Only subscribed addresses can claim FREE.");
+        require(previousEntry[_claimant] + cooldownTime <= block.timestamp, "FREEMOON: You must wait for your cooldown to end before claiming again.");
 
-        uint8 lottery = getCategory(_entrant);
-        previousEntry[_entrant] = block.timestamp;
+        uint8 lottery = getCategory(_claimant);
+        previousEntry[_claimant] = block.timestamp;
+        claims++;
+        claimsSinceLastWin++;
 
-        if(payoutStatus[_entrant] + 1 >= payoutThreshold) {
-            payoutStatus[_entrant] = 0;
-            free.mint(_entrant, payoutAmount);
+        if(payoutStatus[_claimant] + 1 >= payoutThreshold) {
+            payoutStatus[_claimant] = 0;
+            free.mint(subscribedFor[_claimant], payoutAmount);
         } else {
-            payoutStatus[_entrant]++;
+            payoutStatus[_claimant]++;
         }
 
-        emit Entry(_entrant, lottery);
+        emit Entry(_claimant, subscribedFor[_claimant], lottery);
     }
 
     /**
@@ -144,23 +157,56 @@ contract MockUpgradeable is FaucetStorage {
         bool win = checkIfWin(_lottery, _tx ,_block);
         if(win) {
             _updateOdds();
-            freemoon.rewardWinner(_account, _lottery);
-            emit Win(_account, _lottery, _tx, _block);
+            winners++;
+            uint256 claimsTaken = claimsSinceLastWin;
+            claimsSinceLastWin = 0;
+            freemoon.rewardWinner(subscribedFor[_account], _lottery);
+            emit Win(_account, subscribedFor[_account], _lottery, _tx, _block, claimsTaken);
         } else {
-          emit Loss(_account, _lottery, _tx, _block);
+          emit Loss(_account, subscribedFor[_account], _lottery, _tx, _block);
         }
+    }
+
+    /**
+     * @notice Withdraws an amount of FSN subscription funds to another address. Only possible from governance vote.
+     *
+     * @param _to The address to receive FSN funds.
+     * @param _amount The amount of FSN to withdraw from the contract.
+     */
+    function withdrawFunds(address payable _to, uint256 _amount) public onlyGov {
+        require(address(this).balance <= _amount, "FREEMOON: Insufficient FSN funds.");
+        payable(_to).transfer(_amount);
+    }
+    
+    /**
+     * @notice Update the parameters around which the faucet operates. Only possible from governance vote.
+     *
+     * @param _coordinator The address of the faucet coordinator.
+     * @param _subscriptionCost The cost of subscribing in FSN.
+     * @param _cooldownTime The time in seconds an address has to wait before entering the FREEMOON draw again.
+     * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
+     * @param _payoutAmount The current amount of FREE payed to addresses who claim.
+     */
+    function updateParams(address _admin, address _coordinator, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount, uint256 _hotWalletLimit) public onlyGov {
+        admin = _admin;
+        coordinator = _coordinator;
+        subscriptionCost = _subscriptionCost;
+        cooldownTime = _cooldownTime;
+        payoutThreshold = _payoutThreshold;
+        payoutAmount = _payoutAmount;
+        hotWalletLimit = _hotWalletLimit;
     }
 
     /**
      * @notice Pause specific features of the contract in case of an emergency.
      *
-     * @param _status Whether the intention is to "pause" or "unpause" the specified functions.
+     * @param _pause Whether the intention is to "pause" or "unpause" the specified functions.
      * @param _toSet The list of functions that will be affected by this action.
      */
-    function setPause(bool _status, string[] memory _toSet) public onlyGov {
+    function setPause(bool _pause, string[] memory _toSet) public onlyAdmin {
         for(uint8 i = 0; i < _toSet.length; i++) {
-            if(isPaused[_toSet[i]] != _status) {
-                isPaused[_toSet[i]] = _status;
+            if(isPaused[_toSet[i]] != _pause) {
+                isPaused[_toSet[i]] = _pause;
             } else {
                 continue;
             }

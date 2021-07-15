@@ -7,7 +7,7 @@ const Faucet = artifacts.require("Faucet")
 const FaucetProxy = artifacts.require("FaucetProxy")
 
 const Free = artifacts.require("FREE")
-const Freemoon = artifacts.require("FREEMOON")
+const Freemoon = artifacts.require("FMN")
 
 const utils = require("../scripts/99_utils")
 
@@ -47,6 +47,7 @@ const config = () => {
     cooldownTime: "3600", // 1 hour
     payoutThreshold: "1", // 1 entry == receive FREE
     payoutAmount: utils.toWei("1"), // 1 FREE
+    hotWalletLimit: utils.toWei("10"), // 10 FSN max wallet balance
     categories: categories.map(cat => utils.toWei(cat)), // balances required for each FREEMOON lottery category
     odds: odds // odds of winning for each category
   }
@@ -54,7 +55,7 @@ const config = () => {
 
 const setUp = async () => {
   [ coordinator, governance, admin, user, airdrop ] = await web3.eth.getAccounts()
-  const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, categories, odds } = config()
+  const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
   faucetLayout = await Faucet.new({from: admin})
   faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
@@ -68,6 +69,7 @@ const setUp = async () => {
     cooldownTime,
     payoutThreshold,
     payoutAmount,
+    hotWalletLimit,
     categories,
     odds
   )
@@ -84,7 +86,7 @@ const setUp = async () => {
 
   freemoon = await Freemoon.new(
     "Freemoon Token",
-    "FREEMOON",
+    "FMN",
     18,
     governance,
     faucet.address,
@@ -101,7 +103,7 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
 
   it("Should allow deployment of the incorrect contract", async () => {
     [ coordinator, governance, admin, user, airdrop ] = await web3.eth.getAccounts()
-    const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, categories, odds } = config()
+    const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
     mockFaucetLayout = await MockUpgradeable.new({from: admin})
     faucetProxy = await FaucetProxy.new(mockFaucetLayout.address, {from: admin})
@@ -115,6 +117,7 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
       cooldownTime,
       payoutThreshold,
       payoutAmount,
+      hotWalletLimit,
       categories,
       odds
     )
@@ -131,7 +134,7 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
   
     freemoon = await Freemoon.new(
       "Freemoon Token",
-      "FREEMOON",
+      "FMN",
       18,
       governance,
       mockFaucet.address,
@@ -169,67 +172,67 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
     expect(currentAfter).to.equal(currentBefore)
   })
 
-  it("Should allow governance to pause 1 function", async () => {
+  it("Should allow admin to pause 1 function", async () => {
     await setUp()
     await setAssets()
 
-    await truffleAssert.passes(faucet.setPause(true, [ "subscribe" ], {from: governance}))
+    await truffleAssert.passes(faucet.setPause(true, [ "subscribe" ], {from: admin}))
   })
 
-  it("Should allow governance to pause all functions", async () => {
+  it("Should allow admin to pause all functions", async () => {
     await setUp()
     await setAssets()
 
-    await truffleAssert.passes(faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "enter", "resolveEntry" ], {from: governance}))
+    await truffleAssert.passes(faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin}))
   })
 
-  it("Should allow governance to unpause 1 function", async () => {
+  it("Should allow admin to unpause 1 function", async () => {
     await setUp()
     await setAssets()
-    await faucet.setPause(true, [ "subscribe" ], {from: governance})
+    await faucet.setPause(true, [ "subscribe" ], {from: admin})
 
-    await truffleAssert.passes(faucet.setPause(false, [ "subscribe" ], {from: governance}))    
+    await truffleAssert.passes(faucet.setPause(false, [ "subscribe" ], {from: admin}))    
   })
 
-  it("Should allow governance to unpause all functions", async () => {
+  it("Should allow admin to unpause all functions", async () => {
     await setUp()
     await setAssets()
-    await faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "enter", "resolveEntry" ], {from: governance})
+    await faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin})
 
-    await truffleAssert.passes(faucet.setPause(false, [ "subscribe", "swapTimelockForFree", "enter", "resolveEntry" ], {from: governance}))
+    await truffleAssert.passes(faucet.setPause(false, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin}))
   })
 
-  it("Should not allow non-governance to pause functions", async () => {
+  it("Should not allow non-admin to pause functions", async () => {
     await setUp()
     await setAssets()
     
     await truffleAssert.fails(
-      faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "enter", "resolveEntry" ], {from: user}),
+      faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: user}),
       truffleAssert.ErrorType.REVERT,
-      "FREEMOON: Only the governance address can perform this operation."
+      "FREEMOON: Only the admin address can perform this operation."
     )
   })
 
-  it("Should not allow non-governance to unpause functions", async () => {
+  it("Should not allow non-admin to unpause functions", async () => {
     await setUp()
     await setAssets()
-    await faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "enter", "resolveEntry" ], {from: governance})
+    await faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin})
     
     await truffleAssert.fails(
-      faucet.setPause(false, [ "subscribe", "swapTimelockForFree", "enter", "resolveEntry" ], {from: user}),
+      faucet.setPause(false, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: user}),
       truffleAssert.ErrorType.REVERT,
-      "FREEMOON: Only the governance address can perform this operation."
+      "FREEMOON: Only the admin address can perform this operation."
     )
   })
 
   it("Should prevent paused functions being called", async () => {
     await setUp()
     await setAssets()
-    await faucet.setPause(true, [ "enter" ], {from: governance})
+    await faucet.setPause(true, [ "claim" ], {from: admin})
     await truffleAssert.passes(faucet.subscribe(user, {from: user, value: utils.toWei("1")}))
 
     await truffleAssert.fails(
-      faucet.enter(user, {from: user}),
+      faucet.claim(user, {from: user}),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: This function is currently paused."
     )

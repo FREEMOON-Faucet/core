@@ -10,7 +10,7 @@ import "./../FRC758/FRC758.sol";
  *
  * @notice FREEMOON is an FRC758 standard token.
  */
-contract FREEMOON is FRC758 {
+contract FMN is FRC758 {
 
     uint256 immutable TO_WEI;
     uint256 constant INITIAL_SUPPLY = 10;

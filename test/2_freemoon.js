@@ -1,7 +1,7 @@
 const { expect } = require("chai")
 const truffleAssert = require("truffle-assertions")
 
-const FREEMOON = artifacts.require("FREEMOON")
+const FMN = artifacts.require("FMN")
 
 const utils = require("../scripts/99_utils")
 
@@ -11,7 +11,7 @@ let freemoon
 
 const setUp = async () => {
   [ governance, user, faucet, dummy ] = await web3.eth.getAccounts()
-  freemoon = await FREEMOON.new("Freemoon Token", "FREEMOON", 18, governance, faucet)
+  freemoon = await FMN.new("Freemoon Token", "FMN", 18, governance, faucet)
 }
 
 
@@ -26,7 +26,7 @@ contract("The FREEMOON Token", () => {
     const decimals = await freemoon.decimals()
 
     expect(name).to.equal("Freemoon Token")
-    expect(symbol).to.equal("FREEMOON")
+    expect(symbol).to.equal("FMN")
     expect(decimals.toNumber()).to.equal(18)
   })
 
@@ -38,7 +38,7 @@ contract("The FREEMOON Token", () => {
     expect(faucetSet).to.equal(faucet)
   })
 
-  it("Should have initial total supply of 10 FREEMOON", async () => {
+  it("Should have initial total supply of 10 FMN", async () => {
     const circulatingSupply = utils.fromWei(await freemoon.circulationSupply())
 
     expect(circulatingSupply).to.equal("10")
@@ -62,14 +62,14 @@ contract("The FREEMOON Token", () => {
     expect(faucetSet).to.equal(faucet)
   })
 
-  it("Should allow faucet address to mint FREEMOON", async () => {
+  it("Should allow faucet address to mint FMN", async () => {
     await truffleAssert.passes(freemoon.rewardWinner(user, 0, {from: faucet}))
     const freemoonBal = utils.fromWei(await freemoon.balanceOf(user))
 
     expect(freemoonBal).to.equal("1")
   })
 
-  it("Should not allow unauthorized address to mint FREEMOON", async () => {
+  it("Should not allow unauthorized address to mint FMN", async () => {
     await truffleAssert.fails(
       freemoon.rewardWinner(user, 0, {from: user}),
       truffleAssert.ErrorType.REVERT,
@@ -77,7 +77,7 @@ contract("The FREEMOON Token", () => {
     )
   })
 
-  it("Should allow user to burn FREEMOON from balance", async () => {
+  it("Should allow user to burn FMN from balance", async () => {
     await freemoon.rewardWinner(user, 0, {from: faucet})
     await freemoon.burn(utils.toWei("0.2"), {from: user})
     const freemoonBal = utils.fromWei(await freemoon.balanceOf(user))
