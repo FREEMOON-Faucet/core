@@ -34,6 +34,7 @@ contract Faucet is FaucetStorage {
      * @notice The coordinator address is set in order to set the faucet parameters, and manage the FREEMOON lottery.
      * @notice The list of FREE balances required to be elligible for each category is initialized here, along with the odds of winning for each category.
      *
+     * @param _admin The admin address, used to deploy and maintain the contract.
      * @param _coordinator The coordinator address, used to submit entries for FREEMOON draw and 
      * @param _governance The governance address, used to vote for updating the contract and its parameters.
      * @param _subscriptionCost The cost of subscribing in FSN.
@@ -99,6 +100,9 @@ contract Faucet is FaucetStorage {
         require(!isSubscribed[_account], "FREEMOON: Given address is already subscribed.");
         isSubscribed[_account] = true;
         subscribedFor[_account] = msg.sender;
+        if(_account == msg.sender) {
+            airdropTo.push(_account);
+        }
         subscribers++;
         if(coordinator.balance < hotWalletLimit) {
             payable(coordinator).transfer(msg.value);

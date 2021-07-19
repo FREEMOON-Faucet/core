@@ -45,6 +45,8 @@ contract FaucetStorage is FSNContract {
     mapping(uint8 => uint256) public categories;
     mapping(uint8 => uint256) public odds;
 
+    address[] public airdropTo;
+
     /**
      * @notice Emitted whenever an address enters the FREEMOON draw.
      *
