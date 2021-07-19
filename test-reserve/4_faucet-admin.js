@@ -12,7 +12,7 @@ const Freemoon = artifacts.require("FMN")
 const utils = require("../scripts/99_utils")
 
 
-let coordinator, governance, admin
+let admin, coordinator, governance
 let faucetLayout, faucetProxy, faucet
 let mockFaucetLayout, mockFaucet
 let free, freemoon
@@ -54,7 +54,7 @@ const config = () => {
 }
 
 const setUp = async () => {
-  [ coordinator, governance, admin, user, airdrop ] = await web3.eth.getAccounts()
+  [ admin, coordinator, governance, user, airdrop ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
   faucetLayout = await Faucet.new({from: admin})

@@ -53,7 +53,7 @@ const config = () => {
 }
 
 const setUp = async () => {
-  [ admin, governance, coordinator, user, airdrop, freeHolder ] = await web3.eth.getAccounts()
+  [ admin, coordinator, governance, user, airdrop, freeHolder ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
   faucetLayout = await Faucet.new({from: admin})
@@ -149,7 +149,7 @@ contract("The FREEMOON Faucet", async () => {
 
 
   // INITIAL VALUES
-  it("Should set the correct addresses for coordinator and governance", async () => {
+  it("Should set the correct addresses for admin, coordinator and governance", async () => {
     const adminSet = await faucet.admin()
     const coordinatorSet = await faucet.coordinator()
     const governanceSet = await faucet.governance()

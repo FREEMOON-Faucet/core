@@ -7,13 +7,12 @@ import "../interfaces/IFaucet.sol";
 
 contract AirdropStorage {
 
-    IFREE free;
+    IFREE public free;
+    IFaucet public faucet;
 
     address public admin;
     address public coordinator;
     address public governance;
-
-    address public faucet;
 
     bool initialized;
     bool assetsInitialized;
@@ -25,6 +24,10 @@ contract AirdropStorage {
     uint256 public lastAirdrop;
 
     mapping(string => bool) public isPaused;
+
+    mapping(address => uint256) public balRequiredFor;
+
+    address[] public eligibleAssets;
 
     event Airdrop(uint256 minted, uint256 recipients);
 }
