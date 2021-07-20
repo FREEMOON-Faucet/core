@@ -6,6 +6,8 @@ const MockUpgradeable = artifacts.require("MockUpgradeable")
 const Faucet = artifacts.require("Faucet")
 const FaucetProxy = artifacts.require("FaucetProxy")
 
+const MockAirdrop = artifacts.require("MockAirdrop")
+
 const Free = artifacts.require("FREE")
 const Freemoon = artifacts.require("FMN")
 
@@ -14,6 +16,7 @@ const utils = require("../scripts/99_utils")
 
 let admin, coordinator, governance
 let faucetLayout, faucetProxy, faucet
+let airdrop
 let mockFaucetLayout, mockFaucet
 let free, freemoon
 let categories, odds
@@ -54,17 +57,20 @@ const config = () => {
 }
 
 const setUp = async () => {
-  [ admin, coordinator, governance, user, airdrop ] = await web3.eth.getAccounts()
+  [ admin, coordinator, governance, user ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
   faucetLayout = await Faucet.new({from: admin})
   faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
   faucet = await Faucet.at(faucetProxy.address, {from: admin})
+
+  airdrop = await MockAirdrop.new()
   
   await faucet.initialize(
     admin,
     coordinator,
     governance,
+    airdrop.address,
     subscriptionCost,
     cooldownTime,
     payoutThreshold,
@@ -79,7 +85,7 @@ const setUp = async () => {
     "FREE",
     18,
     governance,
-    airdrop,
+    airdrop.address,
     faucet.address,
     {from: admin}
   )
@@ -102,17 +108,20 @@ const setAssets = async () => {
 contract("Freemoon Faucet Upgradeability Tests", async () => {
 
   it("Should allow deployment of the incorrect contract", async () => {
-    [ coordinator, governance, admin, user, airdrop ] = await web3.eth.getAccounts()
+    [ coordinator, governance, admin, user ] = await web3.eth.getAccounts()
     const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
     mockFaucetLayout = await MockUpgradeable.new({from: admin})
     faucetProxy = await FaucetProxy.new(mockFaucetLayout.address, {from: admin})
     mockFaucet = await MockUpgradeable.at(faucetProxy.address, {from: admin})
 
+    airdrop = await MockAirdrop.new()
+
     await mockFaucet.initialize(
       admin,
       coordinator,
       governance,
+      airdrop.address,
       subscriptionCost,
       cooldownTime,
       payoutThreshold,
@@ -127,7 +136,7 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
       "FREE",
       18,
       governance,
-      airdrop,
+      airdrop.address,
       mockFaucet.address,
       {from: admin}
     )
@@ -148,7 +157,7 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
     faucetLayout = await Faucet.new({from: admin})
     await truffleAssert.passes(faucetProxy.upgradeFaucet(faucetLayout.address, {from: admin}))
     faucet = await Faucet.at(faucetProxy.address, {from: admin})
-    await free.updateAuth(faucet.address, airdrop, {from: governance})
+    await free.updateAuth(faucet.address, airdrop.address, {from: governance})
     await freemoon.updateAuth(faucet.address, {from: governance})
 
     const correct = await faucetProxy.currentFaucet()

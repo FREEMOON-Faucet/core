@@ -5,6 +5,8 @@ const truffleAssert = require("truffle-assertions")
 const Faucet = artifacts.require("Faucet")
 const FaucetProxy = artifacts.require("FaucetProxy")
 
+const MockAirdrop = artifacts.require("MockAirdrop")
+
 const Free = artifacts.require("FREE")
 const Freemoon = artifacts.require("FMN")
 
@@ -13,6 +15,7 @@ const utils = require("../scripts/99_utils")
 
 let coordinator, governance, admin, user, freeHolder
 let faucetLayout, faucetProxy, faucet
+let airdrop
 let free, freemoon
 let categories, odds
 let fromNowOneHour, startTime, newTime
@@ -53,17 +56,20 @@ const config = () => {
 }
 
 const setUp = async () => {
-  [ admin, coordinator, governance, user, airdrop, freeHolder ] = await web3.eth.getAccounts()
+  [ admin, coordinator, governance, user, freeHolder ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
   faucetLayout = await Faucet.new({from: admin})
   faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
   faucet = await Faucet.at(faucetProxy.address, {from: admin})
+
+  airdrop = await MockAirdrop.new()
   
   await faucet.initialize(
     admin,
     coordinator,
     governance,
+    airdrop.address,
     subscriptionCost,
     cooldownTime,
     payoutThreshold,
@@ -78,7 +84,7 @@ const setUp = async () => {
     "FREE",
     18,
     governance,
-    airdrop,
+    airdrop.address,
     faucet.address,
     {from: freeHolder}
   )
@@ -224,6 +230,7 @@ contract("The FREEMOON Faucet", async () => {
         admin,
         coordinator,
         governance,
+        airdrop.address,
         subscriptionCost,
         cooldownTime,
         payoutThreshold,

@@ -13,6 +13,8 @@ contract AirdropStorage {
     address public admin;
     address public coordinator;
     address public governance;
+    
+    address constant FSN_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
     bool initialized;
     bool assetsInitialized;
@@ -27,6 +29,7 @@ contract AirdropStorage {
 
     mapping(address => uint256) public balRequiredFor;
 
+    address[] public subscribers;
     address[] public eligibleAssets;
 
     event Airdrop(uint256 minted, uint256 recipients);

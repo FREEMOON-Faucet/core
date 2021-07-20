@@ -2,6 +2,7 @@
 pragma solidity 0.8.5;
 
 import "../FSNContract.sol";
+import "../interfaces/IAirdrop.sol";
 import "../interfaces/IFREE.sol";
 import "../interfaces/IFREEMOON.sol";
 
@@ -10,6 +11,7 @@ contract FaucetStorage is FSNContract {
 
     IFREE free;
     IFREEMOON freemoon;
+    IAirdrop airdrop;
 
     address public admin;
     address public coordinator;
@@ -44,8 +46,6 @@ contract FaucetStorage is FSNContract {
 
     mapping(uint8 => uint256) public categories;
     mapping(uint8 => uint256) public odds;
-
-    address[] public airdropTo;
 
     /**
      * @notice Emitted whenever an address enters the FREEMOON draw.

@@ -17,8 +17,8 @@ const utils = require("../scripts/99_utils")
 let admin, coordinator, governance, user
 let faucetLayout, faucetProxy, faucet
 let airdropLayout, airdropProxy, airdrop
-let free, freemoon, fsn, chng, any, fuseFsn
-let categories, odds
+let free, freemoon, fsn, chng, any, fsnFuse
+let categories, odds, assets, balancesRequired
 let fromNowOneHour, startTime, newTime
 
 const config = () => {
@@ -58,6 +58,27 @@ const config = () => {
   }
 }
 
+const initialAssets = () => {
+  assets = [
+    fsn.address,
+    chng.address,
+    any.address,
+    fsnFuse.address
+  ]
+
+  balancesRequired = [
+    "19000",
+    "50000",
+    "10000",
+    "100"
+  ]
+
+  return {
+    assets,
+    balancesRequired: balancesRequired.map(bal => utils.toWei(bal))
+  }
+}
+
 const setUp = async () => {
   [ admin, coordinator, governance, user ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds, airdropAmount, airdropCooldown } = config()
@@ -93,6 +114,7 @@ const setUp = async () => {
     admin,
     coordinator,
     governance,
+    airdrop.address,
     subscriptionCost,
     cooldownTime,
     payoutThreshold,
@@ -124,27 +146,23 @@ const setUp = async () => {
   chng = await MockAsset.new(
     "Chainge",
     "CHNG",
-    utils.toWei("100000000"),
+    utils.toWei("50000"),
     {from: admin}
   )
 
   any = await MockAsset.new(
     "Anyswap",
     "ANY",
-    utils.toWei("100000000"),
+    utils.toWei("10000"),
     {from: admin}
   )
 
-  fuseFsn = await MockAsset.new(
-    "FUSE/FSN Liquidity Pool",
-    "FUSE/FSN",
-    utils.toWei("100000000"),
+  fsnFuse = await MockAsset.new(
+    "FSN/FUSE Liquidity Pool",
+    "FSN/FUSE",
+    utils.toWei("100"),
     {from: admin}
   )
-}
-
-const spreadAssets = async options => {
-  const { fsn, chng, any, fuseFsn } = options
 }
 
 const setTimes = async () => {
@@ -207,12 +225,71 @@ contract("Airdrop Contract", async () => {
 
   // ADDRESS RESTRICTIONS
   it("Should allow setAssets to be called once", async () => {
-    await airdrop.setAssets()
+    const { assets, balancesRequired } = initialAssets()
+    await truffleAssert.passes(airdrop.setAssets(assets, balancesRequired))
   })
 
-  it("Should not allow setAssets to be called more than once")
+  it("Should not allow setAssets to be called more than once", async () => {
+    const { assets, balancesRequired } = initialAssets()
+    await truffleAssert.passes(airdrop.setAssets(assets, balancesRequired))
+    await truffleAssert.fails(
+      airdrop.setAssets(assets, balancesRequired),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Only the governance address can set assets after initialization."
+    )
+  })
 
-  it("Should allow governance to call setAssets anytime")
+  it("Should allow governance to call setAssets anytime", async () => {
+    const { assets, balancesRequired } = initialAssets()
+    await truffleAssert.passes(airdrop.setAssets(assets, balancesRequired, {from: governance}))
+    await truffleAssert.passes(airdrop.setAssets(assets, balancesRequired, {from: governance}))
+    await truffleAssert.passes(airdrop.setAssets(assets, balancesRequired, {from: governance}))
+  })
 
-  it("Should set initial assets successfully")
+  it("Should set initial assets successfully", async () => {
+    const { assets, balancesRequired } = initialAssets()
+    await airdrop.setAssets(assets, balancesRequired)
+    for(let i = 0; i < assets.length; i++) {
+      let balanceRequirementSet = await airdrop.balRequiredFor(assets[i])
+      expect(utils.fromWei(balanceRequirementSet)).to.equal(utils.fromWei(balancesRequired[i]))
+    }
+  })
+
+  it("Should airdrop the right amount of FREE to subscribed address", async () => {
+    const { assets, balancesRequired } = initialAssets()
+    await airdrop.setAssets(assets, balancesRequired)
+    await faucet.subscribe(admin, {value: utils.toWei("1")})
+    const freeBalBefore = utils.fromWei(await free.balanceOf(admin))
+    await airdrop.airdrop()
+    const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
+
+    expect(freeBalAfter).to.equal(String(Number(freeBalBefore) + 4))
+  })
+
+  it("Should not airdrop FREE to unsubscribed address, regardless of balances", async () => {
+    const { assets, balancesRequired } = initialAssets()
+    await airdrop.setAssets(assets, balancesRequired)
+    const freeBalBefore = utils.fromWei(await free.balanceOf(admin))
+    await airdrop.airdrop()
+    const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
+    expect(freeBalAfter).to.equal(freeBalBefore)
+  })
+
+  it("Should not airdrop FREE to subscribed address with insufficient balances", async () => {
+    const { assets, balancesRequired } = initialAssets()
+    await airdrop.setAssets(assets, balancesRequired)
+    await faucet.subscribe(admin, {value: utils.toWei("1")})
+
+    await airdrop.setAssets(
+      assets,
+      [ "20001", "50001", "10001", "101"].map(bal => utils.toWei(bal)),
+      {from: governance}
+    )
+
+    const freeBalBefore = utils.fromWei(await free.balanceOf(admin))
+    await airdrop.airdrop()
+    const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
+
+    expect(freeBalAfter).to.equal(freeBalBefore)
+  })
 })

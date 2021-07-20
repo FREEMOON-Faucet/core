@@ -61,7 +61,7 @@ contract Airdrop is AirdropStorage {
      * @param _balRequired The balances of these tokens required to receive the FREE airdrop.
      */
     function setAssets(address[] memory _assets, uint256[] memory _balRequired) public {
-        require(msg.sender == governance || !assetsInitialized, "FREEMOON: Only the governance address can set assets.");
+        require(msg.sender == governance || !assetsInitialized, "FREEMOON: Only the governance address can set assets after initialization.");
         for(uint8 i = 0; i < _assets.length; i++) {
             balRequiredFor[_assets[i]] = _balRequired[i];
             eligibleAssets.push(_assets[i]);
@@ -75,15 +75,18 @@ contract Airdrop is AirdropStorage {
      * @notice All subscribers will be checked for the balance required for each eligible token to receive the airdrop.
      */
     function airdrop() public {
-        require(msg.sender == coordinator, "FREEMOON: Only coordinator can initiate airdrops.");
         require(block.timestamp >= lastAirdrop + airdropCooldown, "FREEMOON: Airdrop has already taken place recently.");
-        address[] memory subscribers = faucet.airdropTo();
 
         for(uint8 i = 0; i < subscribers.length; i++) {
             uint256 freeOwed = 0;
 
             for(uint8 j = 0; j < eligibleAssets.length; j++) {
-                uint256 bal = IERC20(eligibleAssets[j]).balanceOf(subscribers[i]);
+                uint256 bal;
+                if(eligibleAssets[j] == FSN_ADDRESS) {
+                    bal = subscribers[i].balance;
+                } else {
+                    bal = IERC20(eligibleAssets[j]).balanceOf(subscribers[i]);
+                }
                 if(bal >= balRequiredFor[eligibleAssets[j]]) {
                     uint256 balRemaining = bal;
                     uint256 payments = 0;
@@ -97,8 +100,20 @@ contract Airdrop is AirdropStorage {
                 }
             }
 
-            IFaucet(faucet).mint(subscribers[i], freeOwed);
+            if(freeOwed > 0) {
+                free.mint(subscribers[i], freeOwed);
+            }
         }
+    }
 
+    /**
+     * @notice Adds a subscriber to the list of airdrop recipients.
+     * @notice Only the faucet contract can add new subscribers here.
+     *
+     * @param _subscriber The address to add as a future airdrop recipient.
+     */
+    function addSubscriber(address _subscriber) external {
+        require(msg.sender == address(faucet), "FREEMOON: Only faucet can add airdrop recipients.");
+        subscribers.push(_subscriber);
     }
 }

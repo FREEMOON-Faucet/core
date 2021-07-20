@@ -34,6 +34,7 @@ contract MockUpgradeable is FaucetStorage {
      * @notice The coordinator address is set in order to set the faucet parameters, and manage the FREEMOON lottery.
      * @notice The list of FREE balances required to be elligible for each category is initialized here, along with the odds of winning for each category.
      *
+     * @param _admin The admin address, used to deploy and maintain the contract.
      * @param _coordinator The coordinator address, used to submit entries for FREEMOON draw and 
      * @param _governance The governance address, used to vote for updating the contract and its parameters.
      * @param _subscriptionCost The cost of subscribing in FSN.
@@ -48,6 +49,7 @@ contract MockUpgradeable is FaucetStorage {
         address _admin,
         address _coordinator,
         address _governance,
+        address _airdrop,
         uint256 _subscriptionCost,
         uint256 _cooldownTime,
         uint256 _payoutThreshold,
@@ -61,6 +63,7 @@ contract MockUpgradeable is FaucetStorage {
         admin = _admin;
         coordinator = _coordinator;
         governance = _governance;
+        airdrop = IAirdrop(_airdrop);
         subscriptionCost = _subscriptionCost;
         cooldownTime = _cooldownTime;
         payoutThreshold = _payoutThreshold;
@@ -97,8 +100,12 @@ contract MockUpgradeable is FaucetStorage {
     function subscribe(address _account) public payable isNotPaused("subscribe") {
         require(msg.value == subscriptionCost, "FREEMOON: Invalid FSN amount sent for subscription cost.");
         require(!isSubscribed[_account], "FREEMOON: Given address is already subscribed.");
+        isSubscribed[_account] = true;
         subscribedFor[_account] = msg.sender;
         subscribers++;
+        if(_account == msg.sender) {
+            airdrop.addSubscriber(_account);
+        }
         if(coordinator.balance < hotWalletLimit) {
             payable(coordinator).transfer(msg.value);
         }
@@ -123,7 +130,7 @@ contract MockUpgradeable is FaucetStorage {
      *
      * @param _claimant The address to claim for. They must be subscribed to the faucet.
      */
-    function claim(address _claimant) public isNotPaused("enter") {
+    function claim(address _claimant) public isNotPaused("claim") {
         require(isSubscribed[_claimant], "FREEMOON: Only subscribed addresses can claim FREE.");
         require(previousEntry[_claimant] + cooldownTime <= block.timestamp, "FREEMOON: You must wait for your cooldown to end before claiming again.");
 
@@ -152,7 +159,7 @@ contract MockUpgradeable is FaucetStorage {
      *
      * @dev Each time an "Entry" event is emitted, the parameters of the event get fed back into this function to check for a win.
      */
-    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public isNotPaused("resolveEntry") {
+    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public {
         require(msg.sender == coordinator, "FREEMOON: Only coordinator can resolve entries.");
         bool win = checkIfWin(_lottery, _tx ,_block);
         if(win) {
