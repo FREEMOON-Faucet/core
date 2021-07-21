@@ -1,15 +1,22 @@
-const FaucetProxy = artifacts.require("FaucetProxy")
 const Faucet = artifacts.require("Faucet")
+const FaucetProxy = artifacts.require("FaucetProxy")
+
+const Airdrop = artifacts.require("Airdrop")
+const AirdropProxy = artifacts.require("AirdropProxy")
+
 const FREE = artifacts.require("FREE")
 const FMN = artifacts.require("FMN")
+
+const MockAsset = artifacts.require("MockAsset")
 
 const utils = require("./99_utils")
 
 
 let admin, coordinator, governance
 let faucet, faucetLayout, faucetProxy
-let free, freemoon
-let categories, odds
+let airdrop, airdropLayout, airdropProxy
+let free, freemoon, fsn, chng, any, fsnFuse
+let categories, odds, assets, balancesRequired
 
 const config = () => {
 
@@ -32,7 +39,7 @@ const config = () => {
     "1000000",
     "500000",
     "250000",
-    "1"
+    "100000"
   ]
 
   return {
@@ -42,7 +49,30 @@ const config = () => {
     payoutAmount: utils.toWei("1"), // 1 FREE
     hotWalletLimit: utils.toWei("10"), // 10 FSN max wallet balance
     categories: categories.map(cat => utils.toWei(cat)), // balances required for each FREEMOON lottery category
-    odds: odds // odds of winning for each category
+    odds: odds, // odds of winning for each category
+    airdropAmount: utils.toWei("1"), // 1 FREE paid per airdrop valid asset balance
+    airdropCooldown: "86400" // 1 day between airdrops
+  }
+}
+
+const initialAssets = () => {
+  assets = [
+    fsn.address,
+    chng.address,
+    any.address,
+    fsnFuse.address
+  ]
+
+  balancesRequired = [
+    "20000",
+    "50000",
+    "10000",
+    "100"
+  ]
+
+  return {
+    assets,
+    balancesRequired: balancesRequired.map(bal => utils.toWei(bal))
   }
 }
 
@@ -56,37 +86,81 @@ const enterIntoDraw = async (account, lottery, tx, block) => {
 }
 
 const deployAll = async () => {
-  [ admin, coordinator, governance, airdrop ] = await web3.eth.getAccounts()
-  const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
+  [ admin, coordinator, governance ] = await web3.eth.getAccounts()
+
+  // TESTING ONLY >>>>>
+  try {
+    fsn = {
+      address: "0xffffffffffffffffffffffffffffffffffffffff"
+    }
+
+    chng = await MockAsset.new(
+      "Chainge",
+      "CHNG",
+      utils.toWei("50000"),
+      {from: admin}
+    )
+
+    any = await MockAsset.new(
+      "Anyswap",
+      "ANY",
+      utils.toWei("10000"),
+      {from: admin}
+    )
+
+    fsnFuse = await MockAsset.new(
+      "FSN/FUSE Liquidity Pool",
+      "FSN/FUSE",
+      utils.toWei("100"),
+      {from: admin}
+    )
+
+    logDeployed("Mock assets deployed successfully:")
+    logDeployed("CHNG:", chng.address)
+    logDeployed("ANY:", any.address)
+    logDeployed("FSN/FUSE:", fsnFuse.address)
+  } catch(err) {
+    throw new Error(`Mock assets deployment unsuccessful: ${err.message}`)
+  }
+  // <<<<< TESTING ONLY
+
+  const {
+    subscriptionCost,
+    cooldownTime,
+    payoutThreshold,
+    payoutAmount,
+    hotWalletLimit,
+    categories,
+    odds,
+    airdropAmount,
+    airdropCooldown
+  } = config()
+
+  const {
+    assets,
+    balancesRequired
+  } = initialAssets()
   
   try {
     faucetLayout = await Faucet.new({from: admin})
     faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
     faucet = await Faucet.at(faucetProxy.address, {from: admin})
 
-    logDeployed("FREEMOON-Faucet deployed at: ", faucet.address)
-    logDeployed("Proxy deployed at:", faucetProxy.address)
+    logDeployed("FREEMOON-Faucet deployed at:", faucet.address)
+    logDeployed("FREEMOON-Faucet Proxy deployed at:", faucetProxy.address)
   } catch(err) {
-    logDeployed("FREEMOON-Faucet deployment unsuccessful:", err.message)
+    throw new Error(`FREEMOON-Faucet deployment unsuccessful: ${err.message}`)
   }
-  
-  try {
-    await faucet.initialize(
-      admin,
-      coordinator,
-      governance,
-      subscriptionCost,
-      cooldownTime,
-      payoutThreshold,
-      payoutAmount,
-      hotWalletLimit,
-      categories,
-      odds
-    )
 
-    logDeployed("Faucet initialized successfully.")
+  try {
+    airdropLayout = await Airdrop.new({from: admin})
+    airdropProxy = await AirdropProxy.new(airdropLayout.address, {from: admin})
+    airdrop = await Airdrop.at(airdropProxy.address, {from: admin})
+
+    logDeployed("Airdrop deployed at:", airdrop.address)
+    logDeployed("Airdrop Proxy deployed at:", airdropProxy.address)
   } catch(err) {
-    logDeployed("Faucet initialization unsuccessful:", err.message)
+    throw new Error(`Airdrop deployment unsuccessful: ${err.message}`)
   }
 
   try {
@@ -95,13 +169,13 @@ const deployAll = async () => {
       "FREE",
       18,
       governance,
-      airdrop,
+      airdrop.address,
       faucet.address
     )
 
     logDeployed("FREE Token deployed at: ", free.address)
   } catch(err) {
-    logDeployed("FREE Token deployment unsuccessful:", err.message)
+    throw new Error(`FREE Token deployment unsuccessful: ${err.message}`)
   }
 
   try {
@@ -115,7 +189,43 @@ const deployAll = async () => {
 
     logDeployed("FMN Token deployed at: ", freemoon.address)
   } catch(err) {
-    logDeployed("FMN Token deployment unsuccessful:", err.message)
+    throw new Error(`FMN Token deployment unsuccessful: ${err.message}`)
+  }
+  
+  try {
+    await faucet.initialize(
+      admin,
+      coordinator,
+      governance,
+      airdrop.address,
+      subscriptionCost,
+      cooldownTime,
+      payoutThreshold,
+      payoutAmount,
+      hotWalletLimit,
+      categories,
+      odds
+    )
+
+    logDeployed("Faucet initialized successfully.")
+  } catch(err) {
+    throw new Error(`Faucet initialization unsuccessful: ${err.message}`)
+  }
+
+  try {
+    await airdrop.initialize(
+      admin,
+      coordinator,
+      governance,
+      faucet.address,
+      free.address,
+      airdropAmount,
+      airdropCooldown
+    )
+
+    logDeployed("Airdrop initialized successfully.")
+  } catch(err) {
+    throw new Error(`Airdrop initialization unsuccessful: ${err.message}`)
   }
 
   try {
@@ -123,18 +233,31 @@ const deployAll = async () => {
 
     logDeployed("Set FREE asset addresses in faucet successful.")
   } catch(err) {
-    logDeployed("Set FREE asset addresses in faucet unsuccessful:", err.message)
+    throw new Error(`Set FREE asset addresses in faucet unsuccessful: ${err.message}`)
   }
 
   try {
-    await faucet.subscribe(admin, {from: admin, value: utils.toWei("1")})
-    const { txHash, blockHash } = utils.getHashes(await faucet.claim(admin, {from: admin}))
-    await enterIntoDraw(admin, 7, txHash, blockHash)
-    const wins = (await faucet.winners()).toNumber()
-    logDeployed("Forced win successful, win count:", wins)
+    await airdrop.setAssets(assets, balancesRequired, {from: admin})
+    
+    logDeployed("Set FSN, CHNG, ANY, FSN/FUSE assets in airdrop successfully.")
   } catch(err) {
-    logDeployed("Forced win failed:", err.message)
+    throw new Error(`Set FSN, CHNG, ANY, FSN/FUSE assets in airdrop unsuccessfull: ${err.message}`)
   }
+
+  // try {
+  //   await faucet.subscribe(admin, {from: admin, value: utils.toWei("1")})
+  //   const { txHash, blockHash } = utils.getHashes(await faucet.claim(admin, {from: admin}))
+  //   await enterIntoDraw(admin, 7, txHash, blockHash)
+  //   const wins = (await faucet.winners()).toNumber()
+  //   if(Number(wins) > 0) logDeployed("Forced win successful, win count:", wins)
+  //   else throw new Error(`Unsuccessful attempt at winning lottery.`)
+  // } catch(err) {
+  //   throw new Error(`Forced win failed: ${err.message}`)
+  // }
 }
 
-deployAll()
+try {
+  deployAll()
+} catch(err) {
+  console.log(err.message)
+}

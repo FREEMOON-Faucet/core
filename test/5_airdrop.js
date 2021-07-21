@@ -14,12 +14,12 @@ const MockAsset = artifacts.require("MockAsset")
 
 const utils = require("../scripts/99_utils")
 
-let admin, coordinator, governance, user
+let admin, coordinator, governance
 let faucetLayout, faucetProxy, faucet
 let airdropLayout, airdropProxy, airdrop
 let free, freemoon, fsn, chng, any, fsnFuse
 let categories, odds, assets, balancesRequired
-let fromNowOneHour, startTime, newTime
+let fromNowOneDay, startTime, newTime
 
 const config = () => {
 
@@ -169,7 +169,7 @@ const setTimes = async () => {
   startTime = await web3.eth.getBlock("latest")
   startTime = startTime.timestamp
 
-  fromNowOneHour = startTime + 3605
+  fromNowOneDay = startTime + 86405
 }
 
 const advanceBlockAtTime = async time => {
@@ -291,5 +291,21 @@ contract("Airdrop Contract", async () => {
     const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
 
     expect(freeBalAfter).to.equal(freeBalBefore)
+  })
+
+  it("Should only be callable once per set airdrop cooldown", async () => {
+    const { assets, balancesRequired } = initialAssets()
+    await airdrop.setAssets(assets, balancesRequired)
+    await airdrop.airdrop()
+
+    await truffleAssert.fails(
+      airdrop.airdrop(),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Airdrop has already taken place recently."
+    )
+
+    await advanceBlockAtTime(fromNowOneDay)
+
+    await truffleAssert.passes(airdrop.airdrop())
   })
 })

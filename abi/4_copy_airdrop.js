@@ -9,9 +9,8 @@ function readingFile(error, data) {
     console.log(error)
   } else {
     abi = (JSON.parse(data)).abi
-    console.log(abi)
 
-    fs.writeFile("abi/faucet.js", JSON.stringify(abi), "utf8", writeFile)
+    fs.writeFile("abi/airdrop.js", JSON.stringify(abi), "utf8", writeFile)
   }
 }
 
@@ -19,7 +18,7 @@ function writeFile(error) {
   if(error) {
     console.log(error)
   } else {
-    console.log("ABI copied into faucet.js")
+    console.log("ABI copied into airdrop.js")
   }
 }
 
