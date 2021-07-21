@@ -104,6 +104,8 @@ contract Airdrop is AirdropStorage {
                 free.mint(subscribers[i], freeOwed);
             }
         }
+
+        lastAirdrop = block.timestamp;
     }
 
     /**
