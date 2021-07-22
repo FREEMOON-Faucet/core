@@ -70,52 +70,48 @@ contract Airdrop is AirdropStorage {
     }
 
     /**
-     * @notice Initiates an airdrop to valid subscribed addresses.
-     * @notice This function may be called once per cooldown period, and sends the current set amount of FREE.
-     * @notice All subscribers will be checked for the balance required for each eligible token to receive the airdrop.
+     * @notice Subscribed addresses can claim their airdrop once every set cooldown period. The amount is based on their balance of eligible assets.
+     *
+     * @param _recipient The address to claim their airdrop.
      */
-    function airdrop() public {
-        require(block.timestamp >= lastAirdrop + airdropCooldown, "FREEMOON: Airdrop has already taken place recently.");
-
-        for(uint8 i = 0; i < subscribers.length; i++) {
-            uint256 freeOwed = 0;
-
-            for(uint8 j = 0; j < eligibleAssets.length; j++) {
-                uint256 bal;
-                if(eligibleAssets[j] == FSN_ADDRESS) {
-                    bal = subscribers[i].balance;
-                } else {
-                    bal = IERC20(eligibleAssets[j]).balanceOf(subscribers[i]);
-                }
-                if(bal >= balRequiredFor[eligibleAssets[j]]) {
-                    uint256 balRemaining = bal;
-                    uint256 payments = 0;
-
-                    while(balRemaining >= balRequiredFor[eligibleAssets[j]]) {
-                        payments++;
-                        balRemaining -= balRequiredFor[eligibleAssets[j]];
-                    }
-
-                    freeOwed += payments * airdropAmount;
-                }
-            }
-
-            if(freeOwed > 0) {
-                free.mint(subscribers[i], freeOwed);
-            }
+    function claimAirdrop(address _recipient) public {
+        require(faucet.isSubscribed(_recipient), "FREEMOON: Only faucet subscribers can claim airdrops.");
+        require(previousClaim[_recipient] + airdropCooldown <= block.timestamp, "FREEMOON: This address has claimed airdrop recently.");
+        uint256 airdropClaimable = getClaimable(_recipient);
+        if(airdropClaimable > 0) {
+            previousClaim[_recipient] = block.timestamp;
+            free.mint(_recipient, airdropClaimable);
         }
-
-        lastAirdrop = block.timestamp;
     }
 
     /**
-     * @notice Adds a subscriber to the list of airdrop recipients.
-     * @notice Only the faucet contract can add new subscribers here.
+     * @notice Calculates the amount of FREE currently claimable by an address.
      *
-     * @param _subscriber The address to add as a future airdrop recipient.
+     * @param _by The address being checked.
      */
-    function addSubscriber(address _subscriber) external {
-        require(msg.sender == address(faucet), "FREEMOON: Only faucet can add airdrop recipients.");
-        subscribers.push(_subscriber);
-    }
+    function getClaimable(address _by) public view returns(uint256) {
+        uint256 freeOwed;
+
+        for(uint8 i = 0; i < eligibleAssets.length; i++) {
+            uint256 bal;
+            if(eligibleAssets[i] == FSN_ADDRESS) {
+                bal = _by.balance;
+            } else {
+                bal = IERC20(eligibleAssets[i]).balanceOf(_by);
+            }
+            if(bal >= balRequiredFor[eligibleAssets[i]]) {
+                uint256 balRemaining = bal;
+                uint256 payments = 0;
+
+                while(balRemaining >= balRequiredFor[eligibleAssets[i]]) {
+                    payments++;
+                    balRemaining -= balRequiredFor[eligibleAssets[i]];
+                }
+
+                freeOwed += payments * airdropAmount;
+            }
+        }
+
+        return freeOwed;
+    }    
 }

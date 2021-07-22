@@ -28,9 +28,10 @@ contract AirdropStorage {
     mapping(string => bool) public isPaused;
 
     mapping(address => uint256) public balRequiredFor;
+    mapping(address => uint256) public airdropOwed;
+    mapping(address => uint256) public previousClaim;
 
-    address[] public subscribers;
     address[] public eligibleAssets;
 
-    event Airdrop(uint256 minted, uint256 recipients);
+    event Airdrop(address indexed recipient, uint256 amount);
 }

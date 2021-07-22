@@ -190,6 +190,11 @@ const advanceBlockAtTime = async time => {
   newTime = newBlock.timestamp
 }
 
+const setAssets = async () => {
+  const { assets, balancesRequired } = initialAssets()
+  await airdrop.setAssets(assets, balancesRequired)
+}
+
 
 contract("Airdrop Contract", async () => {
   beforeEach("Re-deploy all, set start time", async () => {
@@ -255,57 +260,67 @@ contract("Airdrop Contract", async () => {
     }
   })
 
-  it("Should airdrop the right amount of FREE to subscribed address", async () => {
-    const { assets, balancesRequired } = initialAssets()
-    await airdrop.setAssets(assets, balancesRequired)
+  it("Should airdrop the right amount of FREE to subscribed address when called", async () => {
+    await setAssets()
     await faucet.subscribe(admin, {value: utils.toWei("1")})
     const freeBalBefore = utils.fromWei(await free.balanceOf(admin))
-    await airdrop.airdrop()
+    await airdrop.claimAirdrop(admin)
     const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
 
     expect(freeBalAfter).to.equal(String(Number(freeBalBefore) + 4))
   })
 
-  it("Should not airdrop FREE to unsubscribed address, regardless of balances", async () => {
-    const { assets, balancesRequired } = initialAssets()
-    await airdrop.setAssets(assets, balancesRequired)
-    const freeBalBefore = utils.fromWei(await free.balanceOf(admin))
-    await airdrop.airdrop()
-    const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
-    expect(freeBalAfter).to.equal(freeBalBefore)
-  })
+//   it("Should airdrop the right amount of FREE to subscribed address", async () => {
+//     const { assets, balancesRequired } = initialAssets()
+//     await airdrop.setAssets(assets, balancesRequired)
+//     await faucet.subscribe(admin, {value: utils.toWei("1")})
+//     const freeBalBefore = utils.fromWei(await free.balanceOf(admin))
+//     await airdrop.airdrop()
+//     const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
 
-  it("Should not airdrop FREE to subscribed address with insufficient balances", async () => {
-    const { assets, balancesRequired } = initialAssets()
-    await airdrop.setAssets(assets, balancesRequired)
-    await faucet.subscribe(admin, {value: utils.toWei("1")})
+//     expect(freeBalAfter).to.equal(String(Number(freeBalBefore) + 4))
+//   })
 
-    await airdrop.setAssets(
-      assets,
-      [ "20001", "50001", "10001", "101"].map(bal => utils.toWei(bal)),
-      {from: governance}
-    )
+//   it("Should not airdrop FREE to unsubscribed address, regardless of balances", async () => {
+//     const { assets, balancesRequired } = initialAssets()
+//     await airdrop.setAssets(assets, balancesRequired)
+//     const freeBalBefore = utils.fromWei(await free.balanceOf(admin))
+//     await airdrop.airdrop()
+//     const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
+//     expect(freeBalAfter).to.equal(freeBalBefore)
+//   })
 
-    const freeBalBefore = utils.fromWei(await free.balanceOf(admin))
-    await airdrop.airdrop()
-    const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
+//   it("Should not airdrop FREE to subscribed address with insufficient balances", async () => {
+//     const { assets, balancesRequired } = initialAssets()
+//     await airdrop.setAssets(assets, balancesRequired)
+//     await faucet.subscribe(admin, {value: utils.toWei("1")})
 
-    expect(freeBalAfter).to.equal(freeBalBefore)
-  })
+//     await airdrop.setAssets(
+//       assets,
+//       [ "20001", "50001", "10001", "101"].map(bal => utils.toWei(bal)),
+//       {from: governance}
+//     )
 
-  it("Should only be callable once per set airdrop cooldown", async () => {
-    const { assets, balancesRequired } = initialAssets()
-    await airdrop.setAssets(assets, balancesRequired)
-    await airdrop.airdrop()
+//     const freeBalBefore = utils.fromWei(await free.balanceOf(admin))
+//     await airdrop.airdrop()
+//     const freeBalAfter = utils.fromWei(await free.balanceOf(admin))
 
-    await truffleAssert.fails(
-      airdrop.airdrop(),
-      truffleAssert.ErrorType.REVERT,
-      "FREEMOON: Airdrop has already taken place recently."
-    )
+//     expect(freeBalAfter).to.equal(freeBalBefore)
+//   })
 
-    await advanceBlockAtTime(fromNowOneDay)
+//   it("Should only be callable once per set airdrop cooldown", async () => {
+//     const { assets, balancesRequired } = initialAssets()
+//     await airdrop.setAssets(assets, balancesRequired)
+//     await airdrop.airdrop()
 
-    await truffleAssert.passes(airdrop.airdrop())
-  })
+//     await truffleAssert.fails(
+//       airdrop.airdrop(),
+//       truffleAssert.ErrorType.REVERT,
+//       "FREEMOON: Airdrop has already taken place recently."
+//     )
+
+//     await advanceBlockAtTime(fromNowOneDay)
+
+//     await truffleAssert.passes(airdrop.airdrop())
+//   })
 })
