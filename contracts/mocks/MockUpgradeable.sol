@@ -49,7 +49,6 @@ contract MockUpgradeable is FaucetStorage {
         address _admin,
         address _coordinator,
         address _governance,
-        address _airdrop,
         uint256 _subscriptionCost,
         uint256 _cooldownTime,
         uint256 _payoutThreshold,
@@ -63,7 +62,6 @@ contract MockUpgradeable is FaucetStorage {
         admin = _admin;
         coordinator = _coordinator;
         governance = _governance;
-        airdrop = IAirdrop(_airdrop);
         subscriptionCost = _subscriptionCost;
         cooldownTime = _cooldownTime;
         payoutThreshold = _payoutThreshold;
@@ -103,9 +101,6 @@ contract MockUpgradeable is FaucetStorage {
         isSubscribed[_account] = true;
         subscribedFor[_account] = msg.sender;
         subscribers++;
-        if(_account == msg.sender) {
-            airdrop.addSubscriber(_account);
-        }
         if(coordinator.balance < hotWalletLimit) {
             payable(coordinator).transfer(msg.value);
         }

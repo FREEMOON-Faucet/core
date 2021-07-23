@@ -70,17 +70,16 @@ contract Airdrop is AirdropStorage {
     }
 
     /**
-     * @notice Subscribed addresses can claim their airdrop once every set cooldown period. The amount is based on their balance of eligible assets.
-     *
-     * @param _recipient The address to claim their airdrop.
+     * @notice Subscribed addresses can claim their airdrop once every set cooldown period.
+     * @notice The amount is based on their balance of eligible assets.
      */
-    function claimAirdrop(address _recipient) public {
-        require(faucet.isSubscribed(_recipient), "FREEMOON: Only faucet subscribers can claim airdrops.");
-        require(previousClaim[_recipient] + airdropCooldown <= block.timestamp, "FREEMOON: This address has claimed airdrop recently.");
-        uint256 airdropClaimable = getClaimable(_recipient);
+    function claimAirdrop() public {
+        require(faucet.isSubscribed(msg.sender), "FREEMOON: Only faucet subscribers can claim airdrops.");
+        require(previousClaim[msg.sender] + airdropCooldown <= block.timestamp, "FREEMOON: This address has claimed airdrop recently.");
+        uint256 airdropClaimable = getClaimable(msg.sender);
         if(airdropClaimable > 0) {
-            previousClaim[_recipient] = block.timestamp;
-            free.mint(_recipient, airdropClaimable);
+            previousClaim[msg.sender] = block.timestamp;
+            free.mint(msg.sender, airdropClaimable);
         }
     }
 
@@ -92,23 +91,25 @@ contract Airdrop is AirdropStorage {
     function getClaimable(address _by) public view returns(uint256) {
         uint256 freeOwed;
 
-        for(uint8 i = 0; i < eligibleAssets.length; i++) {
-            uint256 bal;
-            if(eligibleAssets[i] == FSN_ADDRESS) {
-                bal = _by.balance;
-            } else {
-                bal = IERC20(eligibleAssets[i]).balanceOf(_by);
-            }
-            if(bal >= balRequiredFor[eligibleAssets[i]]) {
-                uint256 balRemaining = bal;
-                uint256 payments = 0;
-
-                while(balRemaining >= balRequiredFor[eligibleAssets[i]]) {
-                    payments++;
-                    balRemaining -= balRequiredFor[eligibleAssets[i]];
+        if(previousClaim[_by] + airdropCooldown <= block.timestamp) {
+            for(uint8 i = 0; i < eligibleAssets.length; i++) {
+                uint256 bal;
+                if(eligibleAssets[i] == FSN_ADDRESS) {
+                    bal = _by.balance;
+                } else {
+                    bal = IERC20(eligibleAssets[i]).balanceOf(_by);
                 }
+                if(bal >= balRequiredFor[eligibleAssets[i]]) {
+                    uint256 balRemaining = bal;
+                    uint256 payments = 0;
 
-                freeOwed += payments * airdropAmount;
+                    while(balRemaining >= balRequiredFor[eligibleAssets[i]]) {
+                        payments++;
+                        balRemaining -= balRequiredFor[eligibleAssets[i]];
+                    }
+
+                    freeOwed += payments * airdropAmount;
+                }
             }
         }
 
