@@ -1,12 +1,10 @@
 const { expect } = require("chai")
 const truffleAssert = require("truffle-assertions")
 
-const MockUpgradeable = artifacts.require("MockUpgradeable")
-
 const Faucet = artifacts.require("Faucet")
 const FaucetProxy = artifacts.require("FaucetProxy")
 
-const MockAirdrop = artifacts.require("MockAirdrop")
+const Airdrop = artifacts.require("Airdrop")
 
 const Free = artifacts.require("FREE")
 const Freemoon = artifacts.require("FMN")
@@ -64,7 +62,7 @@ const setUp = async () => {
   faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
   faucet = await Faucet.at(faucetProxy.address, {from: admin})
 
-  airdrop = await MockAirdrop.new()
+  airdrop = await Airdrop.new()
   
   await faucet.initialize(
     admin,
@@ -107,14 +105,14 @@ const setAssets = async () => {
 contract("Freemoon Faucet Upgradeability Tests", async () => {
 
   it("Should allow deployment of the incorrect contract", async () => {
-    [ coordinator, governance, admin, user ] = await web3.eth.getAccounts()
+    [ admin, coordinator, governance, user ] = await web3.eth.getAccounts()
     const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
-    mockFaucetLayout = await MockUpgradeable.new({from: admin})
+    mockFaucetLayout = await Faucet.new({from: admin})
     faucetProxy = await FaucetProxy.new(mockFaucetLayout.address, {from: admin})
-    mockFaucet = await MockUpgradeable.at(faucetProxy.address, {from: admin})
+    mockFaucet = await Faucet.at(faucetProxy.address, {from: admin})
 
-    airdrop = await MockAirdrop.new()
+    airdrop = await Airdrop.new()
 
     await mockFaucet.initialize(
       admin,
@@ -167,7 +165,7 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
     await setUp()
     const currentBefore = await faucetProxy.currentFaucet()
 
-    mockFaucetLayout = await MockUpgradeable.new({from: admin})
+    mockFaucetLayout = await Faucet.new({from: admin})
     await truffleAssert.fails(
       faucetProxy.upgradeFaucet(mockFaucetLayout.address, {from: user}),
       truffleAssert.ErrorType.REVERT,

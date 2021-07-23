@@ -4,7 +4,7 @@ pragma solidity 0.8.5;
 /**
  * @notice This is mock contract designed only to test the randomness of the FREEMOON lottery.
  */
-contract MockFaucet {
+contract LotteryFaucet {
 
     address coordinator;
 

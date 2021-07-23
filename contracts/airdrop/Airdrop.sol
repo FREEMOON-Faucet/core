@@ -73,7 +73,7 @@ contract Airdrop is AirdropStorage {
      * @notice Subscribed addresses can claim their airdrop once every set cooldown period.
      * @notice The amount is based on their balance of eligible assets.
      */
-    function claimAirdrop() public {
+    function claimAirdrop() public isNotPaused("claimAirdrop") {
         require(faucet.isSubscribed(msg.sender), "FREEMOON: Only faucet subscribers can claim airdrops.");
         require(previousClaim[msg.sender] + airdropCooldown <= block.timestamp, "FREEMOON: This address has claimed airdrop recently.");
         uint256 airdropClaimable = getClaimable(msg.sender);
@@ -114,5 +114,35 @@ contract Airdrop is AirdropStorage {
         }
 
         return freeOwed;
-    }    
+    }
+    
+    /**
+     * @notice Update the parameters around which the faucet operates. Only possible from governance vote.
+     *
+     * @param _coordinator The address of the faucet coordinator.
+     * @param _airdropAmount The amount of FREE given to each recipient in each airdrop.
+     * @param _airdropCooldown The time in seconds between each airdrop.
+     */
+    function updateParams(address _admin, address _coordinator, uint256 _airdropAmount, uint256 _airdropCooldown) public onlyGov {
+        admin = _admin;
+        coordinator = _coordinator;
+        airdropAmount = _airdropAmount;
+        airdropCooldown = _airdropCooldown;
+    }
+
+    /**
+     * @notice Pause specific features of the contract in case of an emergency.
+     *
+     * @param _pause Whether the intention is to "pause" or "unpause" the specified functions.
+     * @param _toSet The list of functions that will be affected by this action.
+     */
+    function setPause(bool _pause, string[] memory _toSet) public onlyAdmin {
+        for(uint8 i = 0; i < _toSet.length; i++) {
+            if(isPaused[_toSet[i]] != _pause) {
+                isPaused[_toSet[i]] = _pause;
+            } else {
+                continue;
+            }
+        }
+    }
 }

@@ -1,7 +1,7 @@
 const BigNumber = require("bignumber.js")
 const { expect } = require("chai")
 
-const MockFaucet = artifacts.require("MockFaucet")
+const LotteryFaucet = artifacts.require("LotteryFaucet")
 
 
 let coordinator
@@ -23,7 +23,7 @@ const setUp = async () => {
   [ coordinator ] = await web3.eth.getAccounts()
   const odds = config()
   
-  mockFaucet = await MockFaucet.new(
+  lotteryFaucet = await LotteryFaucet.new(
     coordinator,
     odds
   )
@@ -39,7 +39,7 @@ const testLottery = async id => {
     txHash = web3.utils.soliditySha3(i.toString(), Math.floor(Math.random() * i))
     blockHash = web3.utils.soliditySha3(txHash)
 
-    result = await mockFaucet.checkWin(id, txHash, blockHash)
+    result = await lotteryFaucet.checkWin(id, txHash, blockHash)
     result ? wins.push(result) : losses.push(result)
   }
 
@@ -68,7 +68,7 @@ contract("Random Number Generator Testing", async () => {
 
     txHash = web3.utils.soliditySha3("test")
     blockHash = web3.utils.soliditySha3(txHash)
-    result = await mockFaucet.checkWin(0, txHash, blockHash)
+    result = await lotteryFaucet.checkWin(0, txHash, blockHash)
 
     expect(result).to.be.false
   })

@@ -22,7 +22,6 @@ let categories, odds, assets, balancesRequired
 let fromNowOneDay, startTime, newTime
 
 const config = () => {
-
   categories = [
     "1",
     "100",
@@ -233,6 +232,15 @@ contract("Airdrop Contract", async () => {
     expect(faucetSet).to.equal(faucet.address)
   })
 
+  it("Should set initial assets successfully", async () => {
+    const { assets, balancesRequired } = initialAssets()
+    await airdrop.setAssets(assets, balancesRequired)
+    for(let i = 0; i < assets.length; i++) {
+      let balanceRequirementSet = await airdrop.balRequiredFor(assets[i])
+      expect(utils.fromWei(balanceRequirementSet)).to.equal(utils.fromWei(balancesRequired[i]))
+    }
+  })
+
   // ADDRESS RESTRICTIONS
   it("Should allow setAssets to be called once", async () => {
     const { assets, balancesRequired } = initialAssets()
@@ -255,15 +263,19 @@ contract("Airdrop Contract", async () => {
     await truffleAssert.passes(airdrop.setAssets(assets, balancesRequired, {from: governance}))
   })
 
-  it("Should set initial assets successfully", async () => {
-    const { assets, balancesRequired } = initialAssets()
-    await airdrop.setAssets(assets, balancesRequired)
-    for(let i = 0; i < assets.length; i++) {
-      let balanceRequirementSet = await airdrop.balRequiredFor(assets[i])
-      expect(utils.fromWei(balanceRequirementSet)).to.equal(utils.fromWei(balancesRequired[i]))
-    }
+  it("Should allow governance address to update airdrop parameters", async () => {
+    await truffleAssert.passes(airdrop.updateParams(user, admin, utils.toWei("2"), "3600", {from: governance}))
   })
 
+  it("Should not allow non-governance address to update airdrop parameters", async () => {
+    await truffleAssert.fails(
+      truffleAssert.passes(airdrop.updateParams(user, admin, utils.toWei("2"), "3600", {from: user})),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Only the governance address can perform this operation."
+    )
+  })
+
+  // Airdrop Claims
   it("Should airdrop FREE to subscribed address when called", async () => {
     await setAssets()
     await faucet.subscribe(user, {value: utils.toWei("1")})
@@ -299,6 +311,18 @@ contract("Airdrop Contract", async () => {
     await truffleAssert.passes(airdrop.claimAirdrop({from: user}))
   })
 
+  it("Should airdrop the claimable amount of FREE when called", async () => {
+    await setAssets()
+    await spreadAssets({chng: "50000", any: "10000", fsnFuse: "100"})
+    await faucet.subscribe(user, {value: utils.toWei("1")})
+    const claimable = utils.fromWei(await airdrop.getClaimable(user))
+    const freeBalBefore = utils.fromWei(await free.balanceOf(user))
+    await airdrop.claimAirdrop({from: user})
+    const freeBalAfter = utils.fromWei(await free.balanceOf(user))
+    expect(Number(freeBalAfter)).to.equal(Number(freeBalBefore) + Number(claimable))
+  })
+
+  // Airdrop Claim Amounts
   it("Should return 1 FREE claimable", async () => {
     await setAssets()
     await spreadAssets({chng: "50000", any: "0", fsnFuse: "0"})
@@ -352,16 +376,5 @@ contract("Airdrop Contract", async () => {
     const claimable = utils.fromWei(await airdrop.getClaimable(user))
 
     expect(claimable).to.equal("0")
-  })
-
-  it("Should airdrop the claimable amount of FREE when called", async () => {
-    await setAssets()
-    await spreadAssets({chng: "50000", any: "10000", fsnFuse: "100"})
-    await faucet.subscribe(user, {value: utils.toWei("1")})
-    const claimable = utils.fromWei(await airdrop.getClaimable(user))
-    const freeBalBefore = utils.fromWei(await free.balanceOf(user))
-    await airdrop.claimAirdrop({from: user})
-    const freeBalAfter = utils.fromWei(await free.balanceOf(user))
-    expect(Number(freeBalAfter)).to.equal(Number(freeBalBefore) + Number(claimable))
   })
 })

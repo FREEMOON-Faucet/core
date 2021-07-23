@@ -5,7 +5,7 @@ const truffleAssert = require("truffle-assertions")
 const Faucet = artifacts.require("Faucet")
 const FaucetProxy = artifacts.require("FaucetProxy")
 
-const MockAirdrop = artifacts.require("MockAirdrop")
+const Airdrop = artifacts.require("Airdrop")
 
 const Free = artifacts.require("FREE")
 const Freemoon = artifacts.require("FMN")
@@ -63,7 +63,7 @@ const setUp = async () => {
   faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
   faucet = await Faucet.at(faucetProxy.address, {from: admin})
 
-  airdrop = await MockAirdrop.new()
+  airdrop = await Airdrop.new()
   
   await faucet.initialize(
     admin,
