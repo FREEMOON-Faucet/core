@@ -2,7 +2,7 @@ const fs = require("fs")
 
 console.log("Reading from artifacts ...")
 
-fs.readFile("artifacts/contracts/faucet/Faucet.sol/Faucet.json", "utf8", readingFile)
+fs.readFile("artifacts/contracts/airdrop/Airdrop.sol/Airdrop.json", "utf8", readingFile)
 
 function readingFile(error, data) {
   if(error) {

@@ -32,6 +32,8 @@ contract AirdropStorage {
     mapping(address => uint256) public previousClaim;
 
     address[] public eligibleAssets;
+    uint256 public assetCount;
+    
 
     event Airdrop(address indexed recipient, uint256 amount);
 }

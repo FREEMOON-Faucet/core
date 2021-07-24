@@ -197,7 +197,6 @@ const deployAll = async () => {
       admin,
       coordinator,
       governance,
-      airdrop.address,
       subscriptionCost,
       cooldownTime,
       payoutThreshold,
