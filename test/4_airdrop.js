@@ -241,6 +241,19 @@ contract("Airdrop Contract", async () => {
     }
   })
 
+  it("Should not add an asset if the balance required value is zero", async () => {
+    let mockAssetAddress = "0x1234567890abcdef1234567890abcdef12345678"
+    let { assets, balancesRequired } = initialAssets()
+    assets.push(mockAssetAddress)
+    balancesRequired.push(utils.toWei("0"))
+
+    await truffleAssert.fails(
+      airdrop.setAssets(assets, balancesRequired),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Cannot set the required balance of an asset zero."
+    )
+  })
+
   // ADDRESS RESTRICTIONS
   it("Should allow setAssets to be called once", async () => {
     const { assets, balancesRequired } = initialAssets()

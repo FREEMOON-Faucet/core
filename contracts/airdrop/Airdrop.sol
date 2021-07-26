@@ -63,6 +63,7 @@ contract Airdrop is AirdropStorage {
     function setAssets(address[] memory _assets, uint256[] memory _balRequired) public {
         require(msg.sender == governance || !assetsInitialized, "FREEMOON: Only the governance address can set assets after initialization.");
         for(uint8 i = 0; i < _assets.length; i++) {
+            require(_balRequired[i] != 0, "FREEMOON: Cannot set the required balance of an asset zero.");
             if(balRequiredFor[_assets[i]] == 0) {
                 assetCount++;
             }
