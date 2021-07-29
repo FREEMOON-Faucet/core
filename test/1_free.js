@@ -6,11 +6,11 @@ const FREE = artifacts.require("FREE")
 const utils = require("../scripts/99_utils")
 
 
-let admin, governance, user, airdrop, faucet, dummy1, dummy2
+let admin, governance, user, faucet, airdrop, dummy1, dummy2
 let free
 
 const setUp = async () => {
-  [ admin, governance, user, airdrop, faucet, dummy1, dummy2 ] = await web3.eth.getAccounts()
+  [ admin, governance, user, faucet, airdrop, dummy1, dummy2 ] = await web3.eth.getAccounts()
   free = await FREE.new("Free Token", "FREE", 18, admin, governance, {from: admin})
 }
  
@@ -45,36 +45,36 @@ contract("The FREE Token", () => {
   })
 
   it("Should not allow total supply to surpass 100 000 000 000 FREE", async () => {
-    await free.setMintInvokers(airdrop, faucet, {from: admin})
-    await free.mint(admin, utils.toWei("999000000000"), {from: faucet})
+    await free.setMintInvokers(faucet, airdrop, {from: admin})
+    await free.mint(admin, utils.toWei("99900000000"), {from: faucet})
     await truffleAssert.fails(
       free.mint(admin, utils.toWei("1"), {from: faucet}),
       truffleAssert.ErrorType.REVERT,
-      "FREEMOON: Limit of 100 billion FREE total supply has been surpassed."
+      "FREEMOON: Cannot mint more tokens."
     )
   })
 
   it("Should allow admin to set airdrop and faucet addresses, once", async () => {
-    await truffleAssert.passes(free.setMintInvokers(airdrop, faucet, {from: admin}))
+    await truffleAssert.passes(free.setMintInvokers(faucet, airdrop, {from: admin}))
     await truffleAssert.fails(
-      free.setMintInvokers(airdrop, faucet, {from: admin}),
+      free.setMintInvokers(faucet, airdrop, {from: admin}),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: Only governance votes can update the airdrop and/or the faucet addresses."
     )
   })
 
   it("Should allow governance address to set airdrop and faucet addresses", async () => {
-    await free.setMintInvokers(airdrop, faucet, {from: admin})
+    await free.setMintInvokers(faucet, airdrop, {from: admin})
     await truffleAssert.passes(free.setMintInvokers(dummy1, dummy2, {from: governance}))
-    const airdropNew = await free.airdrop()
     const faucetNew = await free.faucet()
+    const airdropNew = await free.airdrop()
 
-    expect(airdropNew).to.equal(dummy1)
-    expect(faucetNew).to.equal(dummy2)
+    expect(faucetNew).to.equal(dummy1)
+    expect(airdropNew).to.equal(dummy2)
   })
 
   it("Should not allow non-governance address to update airdrop and faucet addresses", async () => {
-    await free.setMintInvokers(airdrop, faucet, {from: admin})
+    await free.setMintInvokers(faucet, airdrop, {from: admin})
     await truffleAssert.fails(
       free.setMintInvokers(dummy1, dummy2, {from: user}),
       truffleAssert.ErrorType.REVERT,
@@ -88,7 +88,7 @@ contract("The FREE Token", () => {
   })
 
   it("Should allow airdrop address to mint FREE", async () => {
-    await free.setMintInvokers(airdrop, faucet, {from: admin})
+    await free.setMintInvokers(faucet, airdrop, {from: admin})
     await truffleAssert.passes(free.mint(user, utils.toWei("1"), {from: airdrop}))
     const freeBal = utils.fromWei(await free.balanceOf(user))
 
@@ -96,7 +96,7 @@ contract("The FREE Token", () => {
   })
 
   it("Should allow faucet address to mint FREE", async () => {
-    await free.setMintInvokers(airdrop, faucet, {from: admin})
+    await free.setMintInvokers(faucet, airdrop, {from: admin})
     await truffleAssert.passes(free.mint(user, utils.toWei("1"), {from: faucet}))
     const freeBal = utils.fromWei(await free.balanceOf(user))
 
@@ -104,7 +104,7 @@ contract("The FREE Token", () => {
   })
 
   it("Should not allow unauthorized address to mint FREE", async () => {
-    await free.setMintInvokers(airdrop, faucet, {from: admin})
+    await free.setMintInvokers(faucet, airdrop, {from: admin})
     await truffleAssert.fails(
       free.mint(user, utils.toWei("1"), {from: user}),
       truffleAssert.ErrorType.REVERT,
@@ -113,7 +113,7 @@ contract("The FREE Token", () => {
   })
 
   it("Should allow user to burn FREE from balance", async () => {
-    await free.setMintInvokers(airdrop, faucet, {from: admin})
+    await free.setMintInvokers(faucet, airdrop, {from: admin})
     await free.mint(user, utils.toWei("10"), {from: airdrop})
     await free.burn(utils.toWei("5"), {from: user})
     const freeBal = utils.fromWei(await free.balanceOf(user))

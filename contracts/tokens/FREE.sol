@@ -14,7 +14,8 @@ contract FREE is FRC758 {
 
     uint256 immutable TO_WEI;
     uint256 constant INITIAL_SUPPLY = 100000000; // One Hundred Million
-    uint256 public circulationSupply;
+    uint256 constant LIMIT = 100000000000; // One Hundred Billion
+    uint256 public circulationSupply = 0;
     address public admin;
     address public governance;
     address public faucet;
@@ -35,19 +36,20 @@ contract FREE is FRC758 {
         governance = _governance;
         TO_WEI = 10 ** _decimals;
         circulationSupply += INITIAL_SUPPLY * 10 ** _decimals;
+        totalSupply = LIMIT * 10 ** _decimals;
         _mint(msg.sender, INITIAL_SUPPLY * 10 ** _decimals);
     }
 
     /**
      * @notice Update the addresses permitted to mint FREE (airdrop and faucet). Only possible from governance vote.
      *
-     * @param _airdrop The new address for the airdrop contract.
      * @param _faucet The new address for the faucet contract.
+     * @param _airdrop The new address for the airdrop contract.
      */
-    function setMintInvokers(address _airdrop, address _faucet) public {
+    function setMintInvokers(address _faucet, address _airdrop) public {
         require(msg.sender == governance || (msg.sender == admin && !initialized), "FREEMOON: Only governance votes can update the airdrop and/or the faucet addresses.");
-        airdrop = _airdrop;
         faucet = _faucet;
+        airdrop = _airdrop;
         initialized = true;
     }
 
@@ -59,7 +61,7 @@ contract FREE is FRC758 {
      */
     function mint(address _account, uint256 _amount) external {
         require(msg.sender == airdrop || msg.sender == faucet, "FREEMOON: Only faucet and airdrop have minting privileges.");
-        require(circulationSupply <= 100000000000 * TO_WEI, "FREEMOON: Limit of 100 billion FREE total supply has been surpassed.");
+        require((circulationSupply + _amount) <= totalSupply, "FREEMOON: Cannot mint more tokens.");
 
         circulationSupply += _amount;
         _mint(_account, _amount);

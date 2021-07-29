@@ -14,6 +14,7 @@ contract FMN is FRC758 {
 
     uint256 immutable TO_WEI;
     uint256 constant INITIAL_SUPPLY = 10;
+    uint256 constant LIMIT = 1000;
     uint256 public circulationSupply;
     address public admin;
     address public governance;
@@ -42,17 +43,31 @@ contract FMN is FRC758 {
         governance = _governance;
         TO_WEI = 10 ** _decimals;
         circulationSupply += INITIAL_SUPPLY * 10 ** _decimals;
+        totalSupply = LIMIT * 10 ** _decimals;
         _mint(msg.sender, INITIAL_SUPPLY * 10 ** _decimals);
     }
 
     /**
-     * @notice When someone wins the FREEMOON lottery, they are rewarded with 1 FREEMOON.
+     * @notice Update the address permitted to mint FMN (faucet). Only possible from governance vote.
+     *
+     * @param _faucet The new address for the faucet contract.
+     */
+    function setMintInvokers(address _faucet) public {
+        require(msg.sender == governance || (msg.sender == admin && !initialized), "FREEMOON: Only governance votes can update the faucet address.");
+        faucet = _faucet;
+        initialized = true;
+    }
+
+    /**
+     * @notice When someone wins the FREEMOON lottery, they are rewarded with 1 FMN.
      *
      * @param _winner The winning address to be rewarded.
      * @param _lottery The category of odds the winner won in, based off their balance of FREE.
      */
     function rewardWinner(address _winner, uint8 _lottery) external {
         require(msg.sender == faucet, "FREEMOON: Only faucet has minting privileges.");
+        require((circulationSupply + 1 * TO_WEI) <= totalSupply, "FREEMOON: Cannot mint more tokens.");
+
         circulationSupply += 1 * TO_WEI;
         _mint(_winner, 1 * TO_WEI);
         emit Winner(_winner, _lottery);
@@ -64,20 +79,8 @@ contract FMN is FRC758 {
      * @param _amount Amount to burn.
      */
     function burn(uint256 _amount) public {
+        circulationSupply -= _amount;
         _burn(msg.sender, _amount);
-    }
-
-    /**
-     * @notice Mints a time slice of FREE from sender's balance.
-     *
-     * @param _account Sender's account.
-     * @param _amount Amount to mint.
-     * @param _tokenStart Start time of slice to be minted.
-     * @param _tokenEnd End time of slice to be minted.
-     */
-    function mintTimeSlice(address _account, uint256 _amount, uint256 _tokenStart, uint256 _tokenEnd) public {
-        require(msg.sender == _account, "FREEMOON: Only owner of tokens can mint time slices.");
-        _mintSlice(_account, _amount, _tokenStart, _tokenEnd);
     }
 
     /**
@@ -91,17 +94,6 @@ contract FMN is FRC758 {
     function burnTimeSlice(address _account, uint256 _amount, uint256 _tokenStart, uint256 _tokenEnd) public {
         require(msg.sender == _account, "FREEMOON: Only owner of tokens can burn time slices.");
         _burnSlice(_account, _amount, _tokenStart, _tokenEnd);
-    }
-
-    /**
-     * @notice Update the address permitted to mint FMN (faucet). Only possible from governance vote.
-     *
-     * @param _faucet The new address for the faucet contract.
-     */
-    function setMintInvokers(address _faucet) public {
-        require(msg.sender == governance || (msg.sender == admin && !initialized), "FREEMOON: Only governance votes can update the faucet address.");
-        faucet = _faucet;
-        initialized = true;
     }
 
     function transfer(address _recipient, uint256 _amount) public returns(bool) {
