@@ -5,7 +5,7 @@
   "scripts": {
     "start": "nodemon --experimental-modules ./fsn-faucet/run.mjs",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "npx hardhat run scripts/1_deploy_all.js --network localhost"
+    "deploy-tokens": "npx hardhat run scripts/46_deploy_tokens.js --network fsnMainnet"
   },
   "repository": {
     "type": "git",
