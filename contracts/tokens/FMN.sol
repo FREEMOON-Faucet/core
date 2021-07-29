@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.5;
 
-import "./../FRC758/FRC758.sol";
+import "../FRC758/FRC758.sol";
 
 /**
  * @title The FREEMOON Token contract
  *
- * @author Paddy Curé
+ * @author @paddyc1
  *
  * @notice FREEMOON is an FRC758 standard token.
  */
@@ -15,8 +15,10 @@ contract FMN is FRC758 {
     uint256 immutable TO_WEI;
     uint256 constant INITIAL_SUPPLY = 10;
     uint256 public circulationSupply;
+    address public admin;
     address public governance;
     address public faucet;
+    bool initialized;
 
     /**
      * @notice Emits when someone wins 1 FREEMOON.
@@ -32,12 +34,12 @@ contract FMN is FRC758 {
      * @param _name The name of the token, i.e. "The FREEMOON Token".
      * @param _symbol The symbol of the token, i.e. "FREEMOON".
      * @param _decimals The decimals of the token, used for display puposes, i.e. 18.
+     * @param _admin The admin address, used to manage deployment.
      * @param _governance The governance address, used to vote for upgrading the faucet address.
-     * @param _faucet The FREEMOON faucet address.
      */
-    constructor(string memory _name, string memory _symbol, uint256 _decimals, address _governance, address _faucet) FRC758(_name, _symbol, _decimals) {
+    constructor(string memory _name, string memory _symbol, uint256 _decimals, address _admin, address _governance) FRC758(_name, _symbol, _decimals) {
+        admin = _admin;
         governance = _governance;
-        faucet = _faucet;
         TO_WEI = 10 ** _decimals;
         circulationSupply += INITIAL_SUPPLY * 10 ** _decimals;
         _mint(msg.sender, INITIAL_SUPPLY * 10 ** _decimals);
@@ -92,13 +94,14 @@ contract FMN is FRC758 {
     }
 
     /**
-     * @notice Update the address permitted to mint FREE (faucet). Only possible from governance vote.
+     * @notice Update the address permitted to mint FMN (faucet). Only possible from governance vote.
      *
      * @param _faucet The new address for the faucet contract.
      */
-    function updateAuth(address _faucet) public {
-        require(msg.sender == governance, "FREEMOON: Only governance votes can update the faucet address.");
+    function setMintInvokers(address _faucet) public {
+        require(msg.sender == governance || (msg.sender == admin && !initialized), "FREEMOON: Only governance votes can update the faucet address.");
         faucet = _faucet;
+        initialized = true;
     }
 
     function transfer(address _recipient, uint256 _amount) public returns(bool) {

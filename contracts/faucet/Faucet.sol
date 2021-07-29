@@ -6,7 +6,7 @@ import "./FaucetStorage.sol";
 /**
  * @title The FREEMOON Faucet
  *
- * @author Paddy Curé
+ * @author @paddyc1
  *
  * @notice The FREEMOON Faucet enables FSN addresses to subscribe, giving them the ability to claim periodic FREE tokens.
  * @notice With every claim, the address gets entered into a lottery to win a rare FREEMOON token.

@@ -4,7 +4,14 @@ pragma solidity 0.8.5;
 import "./AirdropStorage.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-
+/**
+ * @title FREE Token Airdrops
+ *
+ * @author @paddyc1
+ *
+ * @notice Subscribers of the FREEMOON Faucet can claim airdrops of FREE once everyday.
+ * @notice The amount of FREE received on airdrop is based on the subscriber's balance of certain tokens.
+ */
 contract Airdrop is AirdropStorage {
 
     modifier isNotPaused(string memory _feature) {

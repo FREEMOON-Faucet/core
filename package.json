@@ -12,7 +12,7 @@
     "url": "https://github.com/paddyc1/FREEMOON-Faucet.git"
   },
   "keywords": [],
-  "author": "Paddy Curé",
+  "author": "@paddyc1",
   "license": "Unlicensed",
   "dependencies": {
     "@nomiclabs/hardhat-truffle5": "^2.0.0",

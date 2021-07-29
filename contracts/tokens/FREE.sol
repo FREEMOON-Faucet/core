@@ -6,17 +6,20 @@ import "../FRC758/FRC758.sol";
 /**
  * @title The FREE Token Contract
  *
- * @author Paddy Curé
+ * @author @paddyc1
  *
  * @notice FREE is an FRC758 standard token.
  */
 contract FREE is FRC758 {
 
+    uint256 immutable TO_WEI;
     uint256 constant INITIAL_SUPPLY = 100000000; // One Hundred Million
     uint256 public circulationSupply;
+    address public admin;
     address public governance;
-    address public airdrop;
     address public faucet;
+    address public airdrop;
+    bool initialized;
 
     /**
      * @notice On deployment, the required addresses are set, and initial supply is minted.
@@ -24,16 +27,28 @@ contract FREE is FRC758 {
      * @param _name The name of the token, i.e. "The FREE Token".
      * @param _symbol The symbol of the token, i.e. "FREE".
      * @param _decimals The decimals of the token, used for display puposes, i.e. 18.
+     * @param _admin The admin address, used to manage deployment.
      * @param _governance The governance address, used to vote for upgrading the airdrop and/or faucet address.
-     * @param _airdrop The airdrop contract address.
-     * @param _faucet The FREEMOON faucet address.
      */
-    constructor(string memory _name, string memory _symbol, uint256 _decimals, address _governance, address _airdrop, address _faucet) FRC758(_name, _symbol, _decimals) {
+    constructor(string memory _name, string memory _symbol, uint256 _decimals, address _admin, address _governance) FRC758(_name, _symbol, _decimals) {
+        admin = _admin;
         governance = _governance;
-        airdrop = _airdrop;
-        faucet = _faucet;
+        TO_WEI = 10 ** _decimals;
         circulationSupply += INITIAL_SUPPLY * 10 ** _decimals;
         _mint(msg.sender, INITIAL_SUPPLY * 10 ** _decimals);
+    }
+
+    /**
+     * @notice Update the addresses permitted to mint FREE (airdrop and faucet). Only possible from governance vote.
+     *
+     * @param _airdrop The new address for the airdrop contract.
+     * @param _faucet The new address for the faucet contract.
+     */
+    function setMintInvokers(address _airdrop, address _faucet) public {
+        require(msg.sender == governance || (msg.sender == admin && !initialized), "FREEMOON: Only governance votes can update the airdrop and/or the faucet addresses.");
+        airdrop = _airdrop;
+        faucet = _faucet;
+        initialized = true;
     }
 
     /**
@@ -44,6 +59,8 @@ contract FREE is FRC758 {
      */
     function mint(address _account, uint256 _amount) external {
         require(msg.sender == airdrop || msg.sender == faucet, "FREEMOON: Only faucet and airdrop have minting privileges.");
+        require(circulationSupply <= 100000000000 * TO_WEI, "FREEMOON: Limit of 100 billion FREE total supply has been surpassed.");
+
         circulationSupply += _amount;
         _mint(_account, _amount);
     }
@@ -54,20 +71,8 @@ contract FREE is FRC758 {
      * @param _amount Amount to burn.
      */
     function burn(uint256 _amount) public {
+        circulationSupply -= _amount;
         _burn(msg.sender, _amount);
-    }
-
-    /**
-     * @notice Mints a time slice of FREE from sender's balance.
-     *
-     * @param _account Sender's account.
-     * @param _amount Amount to mint.
-     * @param _tokenStart Start time of slice to be minted.
-     * @param _tokenEnd End time of slice to be minted.
-     */
-    function mintTimeSlice(address _account, uint256 _amount, uint256 _tokenStart, uint256 _tokenEnd) public {
-        require(msg.sender == _account, "FREEMOON: Only owner of tokens can mint time slices.");
-        _mintSlice(_account, _amount, _tokenStart, _tokenEnd);
     }
 
     /**
@@ -81,18 +86,6 @@ contract FREE is FRC758 {
     function burnTimeSlice(address _account, uint256 _amount, uint256 _tokenStart, uint256 _tokenEnd) public {
         require(msg.sender == _account, "FREEMOON: Only owner of tokens can burn time slices.");
         _burnSlice(_account, _amount, _tokenStart, _tokenEnd);
-    }
-
-    /**
-     * @notice Update the addresses permitted to mint FREE (airdrop and faucet). Only possible from governance vote.
-     *
-     * @param _airdrop The new address for the airdrop contract.
-     * @param _faucet The new address for the faucet contract.
-     */
-    function updateAuth(address _airdrop, address _faucet) public {
-        require(msg.sender == governance, "FREEMOON: Only governance votes can update the airdrop and/or the faucet addresses.");
-        airdrop = _airdrop;
-        faucet = _faucet;
     }
 
     function transfer(address _recipient, uint256 _amount) public returns(bool) {
