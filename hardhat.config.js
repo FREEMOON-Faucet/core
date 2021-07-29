@@ -5,17 +5,16 @@ require("dotenv").config()
 module.exports = {
   solidity: "0.8.5",
   networks: {
-    hardhat: {
-      // forking: {
-      //   url: "https://fsn.dev/api",
-      //   blockNumber: 4776000
-      // }
+    fsnTestnet: {
+      url: "https://testway.freemoon.xyz/gate",
+      chainId: 46688,
+      accounts: [ process.env.PRIVATE_KEY ]
     },
-   fsnTestnet: {
-     url: "https://testway.freemoon.xyz/gate",
-     chainId: 46688,
-     accounts: [ process.env.PRIVATE_KEY ]
-   }
+    fsnMainnet: {
+      url: "https://mainnet.anyswap.exchange",
+      chainId: 32659,
+      accounts: [ process.env.ADMIN_PRIVATE ]
+    }
   },
   mocha: {
     timeout: 600000
