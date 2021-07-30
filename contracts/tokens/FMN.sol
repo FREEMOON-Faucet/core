@@ -20,6 +20,7 @@ contract FMN is FRC758 {
     address public governance;
     address public faucet;
     bool initialized;
+    bool initialMinted;
 
     /**
      * @notice Emits when someone wins 1 FREEMOON.
@@ -44,7 +45,17 @@ contract FMN is FRC758 {
         TO_WEI = 10 ** _decimals;
         circulationSupply += INITIAL_SUPPLY * 10 ** _decimals;
         totalSupply = LIMIT * 10 ** _decimals;
-        _mint(msg.sender, INITIAL_SUPPLY * 10 ** _decimals);
+    }
+
+    /**
+     * @notice Mint the initial supply of FMN. Can only be called once.
+     *
+     * @param _receiver The address to receive the initial supply.
+     */
+    function initialMint(address _receiver) public {
+        require(msg.sender == admin && !initialMinted, "FREEMOON: Only admin can call initial mint, once.");
+        initialMinted = true;
+        _mint(_receiver, INITIAL_SUPPLY * TO_WEI);
     }
 
     /**

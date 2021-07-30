@@ -21,6 +21,7 @@ contract FREE is FRC758 {
     address public faucet;
     address public airdrop;
     bool initialized;
+    bool initialMinted;
 
     /**
      * @notice On deployment, the required addresses are set, and initial supply is minted.
@@ -37,7 +38,17 @@ contract FREE is FRC758 {
         TO_WEI = 10 ** _decimals;
         circulationSupply += INITIAL_SUPPLY * 10 ** _decimals;
         totalSupply = LIMIT * 10 ** _decimals;
-        _mint(msg.sender, INITIAL_SUPPLY * 10 ** _decimals);
+    }
+
+    /**
+     * @notice Mint the initial supply of FREE. Can only be called once.
+     *
+     * @param _receiver The address to receive the initial supply.
+     */
+    function initialMint(address _receiver) public {
+        require(msg.sender == admin && !initialMinted, "FREEMOON: Only admin can call initial mint, once.");
+        initialMinted = true;
+        _mint(_receiver, INITIAL_SUPPLY * TO_WEI);
     }
 
     /**
