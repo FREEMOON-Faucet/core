@@ -2,13 +2,15 @@
 const FREE = artifacts.require("FREE")
 const FMN = artifacts.require("FMN")
 
-const utils = require("./99_utils")
-
 require("dotenv").config()
+
+const utils = require("./99_utils")
 
 
 let free, fmn
 
+
+const GOV = process.env.GOV_PUBLIC
 
 
 const logDeployed = (msg, addr) => {
@@ -27,9 +29,9 @@ const deployTokens = async () => {
   try {
     logDeployed("Minting initial supply of FREE ...")
 
-    await free.initialMint(admin, {from: admin})
+    await free.initialMint(GOV, {from: admin, gas: 8000000, gasPrice: 4000000000})
 
-    const freeBal = utils.fromWei(await free.balanceOf(admin))
+    const freeBal = utils.fromWei(await free.balanceOf(GOV))
 
     logDeployed("FREE minted successfully:", freeBal)
   } catch(err) {
@@ -39,9 +41,9 @@ const deployTokens = async () => {
   try {
     logDeployed("Minting initial supply of FMN ...")
 
-    await fmn.initialMint(admin, {from: admin})
+    await fmn.initialMint(GOV, {from: admin, gas: 8000000, gasPrice: 4000000000})
 
-    const fmnBal = utils.fromWei(await fmn.balanceOf(admin))
+    const fmnBal = utils.fromWei(await fmn.balanceOf(GOV))
 
     logDeployed("FMN minted successfully:", fmnBal)
   } catch(err) {

@@ -8,15 +8,14 @@ require("dotenv").config()
 let free, fmn
 
 
-const ADMIN = process.env.ADMIN_PUBLIC
 const GOV = process.env.GOV_PUBLIC
 
-const FREE_NAME = "TEST"
-const FREE_SYMBOL = "TEST"
+const FREE_NAME = "The FREE Token"
+const FREE_SYMBOL = "FREE"
 const FREE_DECIMALS = 18
 
-const FMN_NAME = "TEST"
-const FMN_SYMBOL = "TEST"
+const FMN_NAME = "The FREEMOON Token"
+const FMN_SYMBOL = "FMN"
 const FMN_DECIMALS = 18
 
 
@@ -30,6 +29,7 @@ const deployTokens = async () => {
   const [ admin ] = await web3.eth.getAccounts()
 
   console.log("Admin: ", admin)
+  console.log("Governance: ", GOV)
 
   try {
     logDeployed("Deploying FREE Token ...")
@@ -38,7 +38,7 @@ const deployTokens = async () => {
       FREE_NAME,
       FREE_SYMBOL,
       FREE_DECIMALS,
-      ADMIN,
+      admin,
       GOV,
       {from: admin}
     )
@@ -55,7 +55,7 @@ const deployTokens = async () => {
       FMN_NAME,
       FMN_SYMBOL,
       FMN_DECIMALS,
-      ADMIN,
+      admin,
       GOV,
       {from: admin}
     )
