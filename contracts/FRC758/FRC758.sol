@@ -5,8 +5,6 @@ import "./libraries/SafeMath256.sol";
 import "./interfaces/ITimeSlicedTokenReceiver.sol";
 import "./interfaces/IFRC758.sol";
 
-// import "@nomiclabs/buidler/console.sol";
-
 abstract contract FRC758 is IFRC758 {
     string internal name_;
     string internal symbol_;

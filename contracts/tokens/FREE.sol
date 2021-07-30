@@ -48,7 +48,8 @@ contract FREE is FRC758 {
     function initialMint(address _receiver) public {
         require(msg.sender == admin && !initialMinted, "FREEMOON: Only admin can call initial mint, once.");
         initialMinted = true;
-        _mint(_receiver, INITIAL_SUPPLY * TO_WEI);
+        uint256 mintAmount = INITIAL_SUPPLY * TO_WEI;
+        _mint(_receiver, mintAmount);
     }
 
     /**

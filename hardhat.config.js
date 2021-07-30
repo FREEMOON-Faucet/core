@@ -22,7 +22,7 @@ module.exports = {
       chainId: 32659,
       accounts: [ process.env.ADMIN_PRIVATE ],
       gas: 8000000,
-      gasPrice: 2000000000
+      gasPrice: 3000000000
     }
   },
   mocha: {

@@ -1,1 +1,0 @@
-const FREE = artifacts.require("FREE")
