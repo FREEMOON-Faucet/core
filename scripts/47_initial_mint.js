@@ -23,8 +23,8 @@ const deployTokens = async () => {
 
   console.log("Admin: ", admin)
 
-  free = await FREE.at("")
-  fmn = await FMN.at("")
+  free = await FREE.at("0x6403eDe3b7604ea4883670c670BeA288618BD5F2")
+  fmn = await FMN.at("0xB80A6C4F2a279ec91921ca30da726c534462125C")
 
   try {
     logDeployed("Minting initial supply of FREE ...")
