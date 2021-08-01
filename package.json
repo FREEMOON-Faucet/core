@@ -5,12 +5,14 @@
   "scripts": {
     "start": "nodemon --experimental-modules ./fsn-faucet/run.mjs",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy-tokens": "npx hardhat run scripts/46_deploy_tokens.js --network fsnMainnet",
-    "mint": "npx hardhat run scripts/47_initial_mint.js --network fsnMainnet"
+    "deploy-tokens": "npx hardhat run scripts/1_deploy_tokens.js --network fsnTestnet",
+    "initial-mint": "npx hardhat run scripts/2_initial_mint.js --network fsnTestnet",
+    "deploy-faucet": "npx hardhat run scripts/3_deploy_faucet.js --network fsnTestnet",
+    "deploy-airdrop": "npx hardhat run scripts/4_deploy_airdrop.js --network fsnTestnet"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/paddyc1/FREEMOON-Faucet.git"
+    "url": "https://github.com/FREEMOON-Faucet/core.git"
   },
   "keywords": [],
   "author": "@paddyc1",

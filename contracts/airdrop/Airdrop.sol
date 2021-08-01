@@ -49,7 +49,7 @@ contract Airdrop is AirdropStorage {
      * @param _balRequired The balances of these tokens required to receive the FREE airdrop.
      */
     function setAssets(address[] memory _assets, uint256[] memory _balRequired) public {
-        require(msg.sender == governance || !assetsInitialized, "FREEMOON: Only the governance address can set assets after initialization.");
+        require(msg.sender == governance || (msg.sender == admin &&!assetsInitialized), "FREEMOON: Only the governance address can set assets after initialization.");
         for(uint8 i = 0; i < _assets.length; i++) {
             require(_balRequired[i] != 0, "FREEMOON: Cannot set the required balance of an asset zero.");
             if(balRequiredFor[_assets[i]] == 0) {

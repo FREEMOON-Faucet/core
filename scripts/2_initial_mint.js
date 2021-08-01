@@ -2,34 +2,30 @@
 const FREE = artifacts.require("FREE")
 const FMN = artifacts.require("FMN")
 
-require("dotenv").config()
-
 const utils = require("./99_utils")
 
-
-let free, fmn
-
+require("dotenv").config()
 
 const GOV = process.env.GOV_PUBLIC
 
+const FREE_ADDRESS = "0x60364ad97beb8EC63d19B021677d02D9152b5E51"
+const FMN_ADDRESS = "0x3EF3feC91F85926a25732A2bD8bE5f9A8BFC40e1"
 
-const logDeployed = (msg, addr) => {
-  if(addr) console.log(`${msg} ${addr}`)
-  else console.log(`${msg}`)
-}
+let admin
+let free, fmn
 
-const deployTokens = async () => {
-  const [ admin ] = await web3.eth.getAccounts()
+const initialMint = async () => {
+  [ admin ] = await web3.eth.getAccounts()
 
   console.log("Admin: ", admin)
 
-  free = await FREE.at("0x6403eDe3b7604ea4883670c670BeA288618BD5F2")
-  fmn = await FMN.at("0xB80A6C4F2a279ec91921ca30da726c534462125C")
+  free = await FREE.at(FREE_ADDRESS)
+  fmn = await FMN.at(FMN_ADDRESS)
 
   try {
     logDeployed("Minting initial supply of FREE ...")
 
-    await free.initialMint(GOV, {from: admin, gas: 8000000, gasPrice: 4000000000})
+    await free.initialMint(GOV, {from: admin})
 
     const freeBal = utils.fromWei(await free.balanceOf(GOV))
 
@@ -41,7 +37,7 @@ const deployTokens = async () => {
   try {
     logDeployed("Minting initial supply of FMN ...")
 
-    await fmn.initialMint(GOV, {from: admin, gas: 8000000, gasPrice: 4000000000})
+    await fmn.initialMint(GOV, {from: admin})
 
     const fmnBal = utils.fromWei(await fmn.balanceOf(GOV))
 
@@ -51,9 +47,8 @@ const deployTokens = async () => {
   }
 }
 
-
 try {
-  deployTokens().then(() => process.exit(0))
+  initialMint().then(() => process.exit(0))
 } catch(err) {
   console.log(err.message)
 }
