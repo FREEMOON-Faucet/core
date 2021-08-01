@@ -8,7 +8,7 @@ const Airdrop = artifacts.require("Airdrop")
 const AirdropProxy = artifacts.require("AirdropProxy")
 
 const Free = artifacts.require("FREE")
-const Freemoon = artifacts.require("FMN")
+const Fmn = artifacts.require("FMN")
 
 const MockAsset = artifacts.require("MockAsset")
 
@@ -17,7 +17,7 @@ const utils = require("../scripts/99_utils")
 let admin, coordinator, governance
 let faucetLayout, faucetProxy, faucet
 let airdropLayout, airdropProxy, airdrop
-let free, freemoon, fsn, chng, any, fsnFuse
+let free, fmn, fsn, chng, any, fsnFuse
 let categories, odds, assets, balancesRequired
 
 const config = () => {
@@ -81,6 +81,24 @@ const setUp = async () => {
   [ admin, coordinator, governance, user ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds, airdropAmount, airdropCooldown } = config()
 
+  free = await Free.new(
+    "The FREE Token",
+    "FREE",
+    18,
+    admin,
+    governance,
+    {from: admin}
+  )
+
+  fmn = await Fmn.new(
+    "The FREEMOON Token",
+    "FMN",
+    18,
+    admin,
+    governance,
+    {from: admin}
+  )
+
   faucetLayout = await Faucet.new({from: admin})
   faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
   faucet = await Faucet.at(faucetProxy.address, {from: admin})
@@ -88,53 +106,46 @@ const setUp = async () => {
   airdropLayout = await Airdrop.new({from: admin})
   airdropProxy = await AirdropProxy.new(airdropLayout.address, {from: admin})
   airdrop = await Airdrop.at(airdropProxy.address, {from: admin})
-
-  free = await Free.new(
-    "Free Token",
-    "FREE",
-    18,
-    governance,
-    airdrop.address,
-    faucet.address,
-    {from: admin}
-  )
-
-  freemoon = await Freemoon.new(
-    "Freemoon Token",
-    "FMN",
-    18,
-    governance,
-    faucet.address,
-    {from: admin}
-  )
   
   await faucet.initialize(
     admin,
-    coordinator,
     governance,
+    free.address,
+    fmn.address,
+    categories,
+    odds,
+    {from: admin}
+  )
+
+  await faucet.updateParams(
+    admin,
+    coordinator,
     subscriptionCost,
     cooldownTime,
     payoutThreshold,
     payoutAmount,
     hotWalletLimit,
-    categories, 
-    odds
-  )
-
-  await faucet.setAssets(
-    free.address,
-    freemoon.address
+    {from: admin}
   )
 
   await airdrop.initialize(
     admin,
-    coordinator,
     governance,
     faucet.address,
     free.address,
-    airdropAmount,
-    airdropCooldown
+    {from: admin}
   )
+
+  await airdrop.updateParams(
+    admin,
+    coordinator,
+    airdropAmount,
+    airdropCooldown,
+    {from: admin}
+  )
+
+  await free.setMintInvokers(faucet.address, airdrop.address, {from: admin})
+  await fmn.setMintInvokers(faucet.address, {from: admin})
 
   fsn = {
     address: "0xffffffffffffffffffffffffffffffffffffffff"
@@ -178,34 +189,16 @@ contract("Airdrop Upgradeability Tests", async () => {
     mockAirdropLayout = await Airdrop.new({from: admin})
     airdropProxy = await AirdropProxy.new(mockAirdropLayout.address, {from: admin})
     mockAirdrop = await Airdrop.at(airdropProxy.address, {from: admin})
-
-    free = await Free.new(
-      "Free Token",
-      "FREE",
-      18,
-      governance,
-      mockAirdrop.address,
-      faucet.address,
-      {from: admin}
-    )
-  
-    freemoon = await Freemoon.new(
-      "Freemoon Token",
-      "FMN",
-      18,
-      governance,
-      faucet.address,
-      {from: admin}
-    )
   })
 
   it("Should upgrade incorrect airdrop contract to correct airdrop contract", async () => {
+    await setUp()
     const incorrect = await airdropProxy.currentAirdrop()
 
     airdropLayout = await Airdrop.new({from: admin})
     await truffleAssert.passes(airdropProxy.upgradeAirdrop(airdropLayout.address, {from: admin}))
     airdrop = await Airdrop.at(airdropProxy.address, {from: admin})
-    await free.updateAuth(faucet.address, airdrop.address, {from: governance})
+    await free.setMintInvokers(faucet.address, airdrop.address, {from: governance})
 
     const correct = await airdropProxy.currentAirdrop()
 

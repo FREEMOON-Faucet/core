@@ -9,11 +9,12 @@ const check = async () => {
   const free = await FREE.at(freeAddress)
   const fmn = await FMN.at(fmnAddress)
 
-  const govBalFree = web3.utils.fromWei(await free.balanceOf(GOV))
-  const govBalFmn = web3.utils.fromWei(await fmn.balanceOf(GOV))
+  const currentGovFree = await free.governance()
+  const currentGovFmn = await fmn.governance()
 
-  console.log(`FREE balance: ${govBalFree}`)
-  console.log(`FMN balance: ${govBalFmn}`)
+  console.log(`Gov expected: ${GOV}`)
+  console.log(`FREE gov: ${currentGovFree}`)
+  console.log(`FMN gov: ${currentGovFmn}`)
 }
 
 try {

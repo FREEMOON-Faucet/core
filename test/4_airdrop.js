@@ -1,14 +1,14 @@
 const { expect } = require("chai")
 const truffleAssert = require("truffle-assertions")
 
+const Free = artifacts.require("FREE")
+const Fmn = artifacts.require("FMN")
+
 const Faucet = artifacts.require("Faucet")
 const FaucetProxy = artifacts.require("FaucetProxy")
 
 const Airdrop = artifacts.require("Airdrop")
 const AirdropProxy = artifacts.require("AirdropProxy")
-
-const Free = artifacts.require("FREE")
-const Freemoon = artifacts.require("FMN")
 
 const MockAsset = artifacts.require("MockAsset")
 
@@ -17,7 +17,7 @@ const utils = require("../scripts/99_utils")
 let admin, coordinator, governance
 let faucetLayout, faucetProxy, faucet
 let airdropLayout, airdropProxy, airdrop
-let free, freemoon, fsn, chng, any, fsnFuse
+let free, fmn, fsn, chng, any, fsnFuse
 let categories, odds, assets, balancesRequired
 let fromNowOneDay, startTime, newTime
 
@@ -82,6 +82,24 @@ const setUp = async () => {
   [ admin, coordinator, governance, user ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds, airdropAmount, airdropCooldown } = config()
 
+  free = await Free.new(
+    "The FREE Token",
+    "FREE",
+    18,
+    admin,
+    governance,
+    {from: admin}
+  )
+
+  fmn = await Fmn.new(
+    "The FREEMOON Token",
+    "FMN",
+    18,
+    admin,
+    governance,
+    {from: admin}
+  )
+
   faucetLayout = await Faucet.new({from: admin})
   faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
   faucet = await Faucet.at(faucetProxy.address, {from: admin})
@@ -89,53 +107,46 @@ const setUp = async () => {
   airdropLayout = await Airdrop.new({from: admin})
   airdropProxy = await AirdropProxy.new(airdropLayout.address, {from: admin})
   airdrop = await Airdrop.at(airdropProxy.address, {from: admin})
-
-  free = await Free.new(
-    "Free Token",
-    "FREE",
-    18,
-    governance,
-    airdrop.address,
-    faucet.address,
-    {from: admin}
-  )
-
-  freemoon = await Freemoon.new(
-    "Freemoon Token",
-    "FMN",
-    18,
-    governance,
-    faucet.address,
-    {from: admin}
-  )
   
   await faucet.initialize(
     admin,
-    coordinator,
     governance,
+    free.address,
+    fmn.address,
+    categories,
+    odds,
+    {from: admin}
+  )
+
+  await faucet.updateParams(
+    admin,
+    coordinator,
     subscriptionCost,
     cooldownTime,
     payoutThreshold,
     payoutAmount,
     hotWalletLimit,
-    categories, 
-    odds
-  )
-
-  await faucet.setAssets(
-    free.address,
-    freemoon.address
+    {from: admin}
   )
 
   await airdrop.initialize(
     admin,
-    coordinator,
     governance,
     faucet.address,
     free.address,
-    airdropAmount,
-    airdropCooldown
+    {from: admin}
   )
+
+  await airdrop.updateParams(
+    admin,
+    coordinator,
+    airdropAmount,
+    airdropCooldown,
+    {from: admin}
+  )
+
+  await free.setMintInvokers(faucet.address, airdrop.address, {from: admin})
+  await fmn.setMintInvokers(faucet.address, {from: admin})
 
   fsn = {
     address: "0xffffffffffffffffffffffffffffffffffffffff"
@@ -234,7 +245,7 @@ contract("Airdrop Contract", async () => {
 
   it("Should set initial assets successfully", async () => {
     const { assets, balancesRequired } = initialAssets()
-    await airdrop.setAssets(assets, balancesRequired)
+    await airdrop.setAssets(assets, balancesRequired, {from: admin})
     for(let i = 0; i < assets.length; i++) {
       let balanceRequirementSet = await airdrop.balRequiredFor(assets[i])
       expect(utils.fromWei(balanceRequirementSet)).to.equal(utils.fromWei(balancesRequired[i]))

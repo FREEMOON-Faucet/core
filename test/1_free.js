@@ -1,7 +1,7 @@
 const { expect } = require("chai")
 const truffleAssert = require("truffle-assertions")
 
-const FREE = artifacts.require("FREE")
+const Free = artifacts.require("FREE")
 
 const utils = require("../scripts/99_utils")
 
@@ -11,7 +11,15 @@ let free
 
 const setUp = async () => {
   [ admin, governance, user, faucet, airdrop, dummy1, dummy2 ] = await web3.eth.getAccounts()
-  free = await FREE.new("Free Token", "FREE", 18, admin, governance, {from: admin})
+
+  free = await Free.new(
+    "The FREE Token",
+    "FREE",
+    18,
+    admin,
+    governance,
+    {from: admin}
+  )
 }
  
 
@@ -25,7 +33,7 @@ contract("The FREE Token", () => {
     const symbol = await free.symbol()
     const decimals = await free.decimals()
 
-    expect(name).to.equal("Free Token")
+    expect(name).to.equal("The FREE Token")
     expect(symbol).to.equal("FREE")
     expect(decimals.toNumber()).to.equal(18)
   })

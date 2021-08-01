@@ -9,7 +9,7 @@ import "./FaucetStorage.sol";
  * @author @paddyc1
  *
  * @notice The FREEMOON Faucet enables FSN addresses to subscribe, giving them the ability to claim periodic FREE tokens.
- * @notice With every claim, the address gets entered into a lottery to win a rare FREEMOON token.
+ * @notice With every claim, the address gets entered into a lottery to win a rare FMN token.
  * @notice The odds of winning this lottery are determined by FREE balance, more FREE merits increased odds of winning. 
  */
 contract Faucet is FaucetStorage {
@@ -18,76 +18,40 @@ contract Faucet is FaucetStorage {
         require(!isPaused[_feature], "FREEMOON: This function is currently paused.");
         _;
     }
-
-    modifier onlyGov {
-        require(msg.sender == governance, "FREEMOON: Only the governance address can perform this operation.");
-        _;
-    }
-
-    modifier onlyAdmin {
-        require(msg.sender == admin, "FREEMOON: Only the admin address can perform this operation.");
-        _;
-    }
     
     /**
      * @notice On deployment, the initial faucet parameters are set.
-     * @notice The coordinator address is set in order to set the faucet parameters, and manage the FREEMOON lottery.
+     * @notice The FREE & FMN token addresses are initialized.
      * @notice The list of FREE balances required to be elligible for each category is initialized here, along with the odds of winning for each category.
      *
      * @param _admin The admin address, used to deploy and maintain the contract.
-     * @param _coordinator The coordinator address, used to submit entries for FREEMOON draw and 
      * @param _governance The governance address, used to vote for updating the contract and its parameters.
-     * @param _subscriptionCost The cost of subscribing in FSN.
-     * @param _cooldownTime The time in seconds an address has to wait before entering the FREEMOON draw again.
-     * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
-     * @param _payoutAmount The current amount of FREE payed to addresses who claim.
+     * @param _free The address of the FREE token.
+     * @param _fmn The address of the FMN token.
      * @param _categories A list of the balances required to qualify for each category.
-     * @param _hotWalletLimit The maximum amount of FSN in the hot wallet.
      * @param _odds A list of odds of winning for each balance category.
      */
     function initialize(
         address _admin,
-        address _coordinator,
         address _governance,
-        uint256 _subscriptionCost,
-        uint256 _cooldownTime,
-        uint256 _payoutThreshold,
-        uint256 _payoutAmount,
-        uint256 _hotWalletLimit,
+        address _free,
+        address _fmn,
         uint256[] memory _categories,
         uint256[] memory _odds
     ) public
     {
         require(!initialized, "FREEMOON: Faucet contract can only be initialized once.");
         admin = _admin;
-        coordinator = _coordinator;
         governance = _governance;
-        subscriptionCost = _subscriptionCost;
-        cooldownTime = _cooldownTime;
-        payoutThreshold = _payoutThreshold;
-        payoutAmount = _payoutAmount;
-        hotWalletLimit = _hotWalletLimit;
+
+        free = IFREE(_free);
+        fmn = IFMN(_fmn);
 
         for(uint8 ii = 0; ii < _categories.length; ii++) {
             categories[ii] = _categories[ii];
             odds[ii] = _odds[ii];
         }
         initialized = true;
-    }
-
-    /**
-     * @notice Used to set contract addresses, only callable once, by admin.
-     *
-     * @param _free The address of the FREE token.
-     * @param _freemoon The address of the FREEMOON token.
-     *
-     * @dev As the FREE and FREEMOON tokens require the faucet contract's address to deploy, their addresses are set after deployment.
-     */
-    function setAssets(address _free, address _freemoon) public onlyAdmin {
-        require(!assetsInitialized, "FREEMOON: Assets can only ever be set once.");
-        free = IFREE(_free);
-        freemoon = IFREEMOON(_freemoon);
-        assetsInitialized = true;
     }
 
     /**
@@ -104,20 +68,6 @@ contract Faucet is FaucetStorage {
         if(coordinator.balance < hotWalletLimit) {
             payable(coordinator).transfer(msg.value);
         }
-    }
-
-    /**
-     * @notice Buy FREE with TL FSN.
-     * @notice The conversion is 1 4-month TL FSN => 50 FREE.
-     */
-    function timelockToFree() public payable isNotPaused("timelockToFree") {
-        require(isSubscribed[msg.sender], "FREEMOON: Only subscribed addresses can swap TL FSN for FREE.");
-        uint64 fourMonthsFromNow = uint64(block.timestamp) + FOUR_MONTHS;
-        uint256[] memory extra;
-
-        uint256 amount = msg.value * 50;
-        require(_receiveAsset(FSN_ASSET_ID, 0, fourMonthsFromNow, SendAssetFlag.UseAnyToTimeLock, extra), "FREEMOON: FSN Timeslice operation failed.");
-        free.mint(msg.sender, amount);
     }
 
     /**
@@ -162,7 +112,7 @@ contract Faucet is FaucetStorage {
             winners++;
             uint256 claimsTaken = claimsSinceLastWin;
             claimsSinceLastWin = 0;
-            freemoon.rewardWinner(subscribedFor[_account], _lottery);
+            fmn.rewardWinner(subscribedFor[_account], _lottery);
             emit Win(_account, subscribedFor[_account], _lottery, _tx, _block, claimsTaken);
         } else {
           emit Loss(_account, subscribedFor[_account], _lottery, _tx, _block);
@@ -175,8 +125,9 @@ contract Faucet is FaucetStorage {
      * @param _to The address to receive FSN funds.
      * @param _amount The amount of FSN to withdraw from the contract.
      */
-    function withdrawFunds(address payable _to, uint256 _amount) public onlyGov {
-        require(address(this).balance <= _amount, "FREEMOON: Insufficient FSN funds.");
+    function withdrawFunds(address payable _to, uint256 _amount) public {
+        require(msg.sender == governance, "FREEMOON: Only the governance address can perform this operation.");
+        require(_amount <= address(this).balance, "FREEMOON: Insufficient FSN funds.");
         payable(_to).transfer(_amount);
     }
     
@@ -189,7 +140,8 @@ contract Faucet is FaucetStorage {
      * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
      * @param _payoutAmount The current amount of FREE payed to addresses who claim.
      */
-    function updateParams(address _admin, address _coordinator, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount, uint256 _hotWalletLimit) public onlyGov {
+    function updateParams(address _admin, address _coordinator, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount, uint256 _hotWalletLimit) public {
+        require(msg.sender == governance || (msg.sender == admin && !paramsInitialized), "FREEMOON: Only the governance address can perform this operation.");
         admin = _admin;
         coordinator = _coordinator;
         subscriptionCost = _subscriptionCost;
@@ -197,6 +149,8 @@ contract Faucet is FaucetStorage {
         payoutThreshold = _payoutThreshold;
         payoutAmount = _payoutAmount;
         hotWalletLimit = _hotWalletLimit;
+        
+        paramsInitialized = true;
     }
 
     /**
@@ -205,7 +159,8 @@ contract Faucet is FaucetStorage {
      * @param _pause Whether the intention is to "pause" or "unpause" the specified functions.
      * @param _toSet The list of functions that will be affected by this action.
      */
-    function setPause(bool _pause, string[] memory _toSet) public onlyAdmin {
+    function setPause(bool _pause, string[] memory _toSet) public {
+        require(msg.sender == admin, "FREEMOON: Only the admin address can perform this operation.");
         for(uint8 i = 0; i < _toSet.length; i++) {
             if(isPaused[_toSet[i]] != _pause) {
                 isPaused[_toSet[i]] = _pause;
@@ -263,7 +218,7 @@ contract Faucet is FaucetStorage {
     }
 
     /**
-     * @notice Every time a FREEMOON token is won, the chances of winning one are globally reduced by 10%.
+     * @notice Every time a FMN token is won, the chances of winning one are globally reduced by 10%.
      */
     function _updateOdds() private {
         for(uint8 i = 0; i < CATEGORIES; i++) {

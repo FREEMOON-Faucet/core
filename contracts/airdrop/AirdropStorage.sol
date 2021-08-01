@@ -18,6 +18,7 @@ contract AirdropStorage {
 
     bool initialized;
     bool assetsInitialized;
+    bool paramsInitialized;
 
     // Configurable parameters
     uint256 public airdropAmount;

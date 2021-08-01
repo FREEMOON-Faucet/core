@@ -1,22 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.5;
 
-import "../FSNContract.sol";
 import "../interfaces/IFREE.sol";
-import "../interfaces/IFREEMOON.sol";
+import "../interfaces/IFMN.sol";
 
 
-contract FaucetStorage is FSNContract {
+contract FaucetStorage {
 
     IFREE free;
-    IFREEMOON freemoon;
+    IFMN fmn;
 
     address public admin;
     address public coordinator;
     address public governance;
 
     bool initialized;
-    bool assetsInitialized;
+    bool paramsInitialized;
 
     uint8 constant CATEGORIES = 8;
     uint256 constant MAX_UINT256 = 2 ** 256 - 1;

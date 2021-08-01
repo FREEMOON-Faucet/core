@@ -7,7 +7,7 @@ const FaucetProxy = artifacts.require("FaucetProxy")
 const Airdrop = artifacts.require("Airdrop")
 
 const Free = artifacts.require("FREE")
-const Freemoon = artifacts.require("FMN")
+const Fmn = artifacts.require("FMN")
 
 const utils = require("../scripts/99_utils")
 
@@ -16,7 +16,7 @@ let admin, coordinator, governance
 let faucetLayout, faucetProxy, faucet
 let airdrop
 let mockFaucetLayout, mockFaucet
-let free, freemoon
+let free, fmn
 let categories, odds
 
 const config = () => {
@@ -55,57 +55,63 @@ const config = () => {
 }
 
 const setUp = async () => {
-  [ admin, coordinator, governance, user ] = await web3.eth.getAccounts()
+  [ admin, coordinator, governance, user, freeHolder ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
+
+  free = await Free.new(
+    "The FREE Token",
+    "FREE",
+    18,
+    admin,
+    governance,
+    {from: freeHolder}
+  )
+
+  fmn = await Fmn.new(
+    "The FREEMOON Token",
+    "FMN",
+    18,
+    admin,
+    governance,
+    {from: freeHolder}
+  )
 
   faucetLayout = await Faucet.new({from: admin})
   faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
   faucet = await Faucet.at(faucetProxy.address, {from: admin})
-
-  airdrop = await Airdrop.new()
   
   await faucet.initialize(
     admin,
-    coordinator,
     governance,
+    free.address,
+    fmn.address,
+    categories,
+    odds,
+    {from: admin}
+  )
+
+  await faucet.updateParams(
+    admin,
+    coordinator,
     subscriptionCost,
     cooldownTime,
     payoutThreshold,
     payoutAmount,
     hotWalletLimit,
-    categories,
-    odds
-  )
-
-  free = await Free.new(
-    "Free Token",
-    "FREE",
-    18,
-    governance,
-    airdrop.address,
-    faucet.address,
     {from: admin}
   )
 
-  freemoon = await Freemoon.new(
-    "Freemoon Token",
-    "FMN",
-    18,
-    governance,
-    faucet.address,
-    {from: admin}
-  )
-}
+  airdrop = await Airdrop.new()
 
-const setAssets = async () => {
-  await faucet.setAssets(free.address, freemoon.address, {from: admin})
+  await free.setMintInvokers(faucet.address, airdrop.address, {from: admin})
+  await fmn.setMintInvokers(faucet.address, {from: admin})
 }
 
 
-contract("Freemoon Faucet Upgradeability Tests", async () => {
+contract("Faucet Upgradeability Tests", async () => {
 
   it("Should allow deployment of the incorrect contract", async () => {
-    [ admin, coordinator, governance, user ] = await web3.eth.getAccounts()
+    await setUp()
     const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
     mockFaucetLayout = await Faucet.new({from: admin})
@@ -113,48 +119,39 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
     mockFaucet = await Faucet.at(faucetProxy.address, {from: admin})
 
     airdrop = await Airdrop.new()
-
+  
     await mockFaucet.initialize(
       admin,
-      coordinator,
       governance,
+      free.address,
+      fmn.address,
+      categories,
+      odds,
+      {from: admin}
+    )
+  
+    await mockFaucet.updateParams(
+      admin,
+      coordinator,
       subscriptionCost,
       cooldownTime,
       payoutThreshold,
       payoutAmount,
       hotWalletLimit,
-      categories,
-      odds
+      {from: admin}
     )
 
-    free = await Free.new(
-      "Free Token",
-      "FREE",
-      18,
-      governance,
-      airdrop.address,
-      mockFaucet.address,
-      {from: admin}
-    )
-  
-    freemoon = await Freemoon.new(
-      "Freemoon Token",
-      "FMN",
-      18,
-      governance,
-      mockFaucet.address,
-      {from: admin}
-    )
+    await free.setMintInvokers(mockFaucet.address, airdrop.address, {from: governance})
+    await fmn.setMintInvokers(mockFaucet.address, {from: governance})
   })
 
   it("Should upgrade incorrect faucet contract to correct faucet contract", async () => {
+    await setUp()
     const incorrect = await faucetProxy.currentFaucet()
 
     faucetLayout = await Faucet.new({from: admin})
     await truffleAssert.passes(faucetProxy.upgradeFaucet(faucetLayout.address, {from: admin}))
     faucet = await Faucet.at(faucetProxy.address, {from: admin})
-    await free.updateAuth(faucet.address, airdrop.address, {from: governance})
-    await freemoon.updateAuth(faucet.address, {from: governance})
 
     const correct = await faucetProxy.currentFaucet()
 
@@ -179,21 +176,18 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
 
   it("Should allow admin to pause 1 function", async () => {
     await setUp()
-    await setAssets()
 
     await truffleAssert.passes(faucet.setPause(true, [ "subscribe" ], {from: admin}))
   })
 
   it("Should allow admin to pause all functions", async () => {
     await setUp()
-    await setAssets()
 
     await truffleAssert.passes(faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin}))
   })
 
   it("Should allow admin to unpause 1 function", async () => {
     await setUp()
-    await setAssets()
     await faucet.setPause(true, [ "subscribe" ], {from: admin})
 
     await truffleAssert.passes(faucet.setPause(false, [ "subscribe" ], {from: admin}))    
@@ -201,7 +195,6 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
 
   it("Should allow admin to unpause all functions", async () => {
     await setUp()
-    await setAssets()
     await faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin})
 
     await truffleAssert.passes(faucet.setPause(false, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin}))
@@ -209,7 +202,6 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
 
   it("Should not allow non-admin to pause functions", async () => {
     await setUp()
-    await setAssets()
     
     await truffleAssert.fails(
       faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: user}),
@@ -220,7 +212,6 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
 
   it("Should not allow non-admin to unpause functions", async () => {
     await setUp()
-    await setAssets()
     await faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin})
     
     await truffleAssert.fails(
@@ -232,7 +223,6 @@ contract("Freemoon Faucet Upgradeability Tests", async () => {
 
   it("Should prevent paused functions being called", async () => {
     await setUp()
-    await setAssets()
     await faucet.setPause(true, [ "claim" ], {from: admin})
     await truffleAssert.passes(faucet.subscribe(user, {from: user, value: utils.toWei("1")}))
 
