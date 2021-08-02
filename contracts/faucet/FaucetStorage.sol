@@ -44,9 +44,9 @@ contract FaucetStorage {
     mapping(uint8 => uint256) public categories;
     mapping(uint8 => uint256) public odds;
 
-    mapping(string => uint256) _uintStorage;
-    mapping(string => address) _addressStorage;
-    mapping(string => bool) _boolStorage;
+    mapping(string => uint256) public _uintStorage;
+    mapping(string => address) public _addressStorage;
+    mapping(string => bool) public _boolStorage;
 
     /**
      * @notice Emitted whenever an address enters the FREEMOON draw.

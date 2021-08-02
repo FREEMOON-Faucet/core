@@ -8,7 +8,8 @@
     "deploy-tokens": "npx hardhat run scripts/1_deploy_tokens.js --network fsnTestnet",
     "initial-mint": "npx hardhat run scripts/2_initial_mint.js --network fsnTestnet",
     "deploy-faucet": "npx hardhat run scripts/3_deploy_faucet.js --network fsnTestnet",
-    "deploy-airdrop": "npx hardhat run scripts/4_deploy_airdrop.js --network fsnTestnet"
+    "deploy-airdrop": "npx hardhat run scripts/4_deploy_airdrop.js --network fsnTestnet",
+    "set-minters": "npx hardhat run scripts/5_set_minters.js --network fsnTestnet"
   },
   "repository": {
     "type": "git",
