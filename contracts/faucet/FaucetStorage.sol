@@ -69,15 +69,4 @@ contract FaucetStorage {
      * @param blockHash The block hash of the "enter" function call.
      */
     event Win(address indexed entrant, address indexed baseAddress, uint8 indexed lottery, bytes32 txHash, bytes32 blockHash, uint256 claimsTaken);
-
-    /**
-     * @notice Emitted when an entry loses the lottery.
-     *
-     * @param entrant The address who entered the FREEMOON draw.
-     * @param baseAddress The address that entrant is subscribed for.
-     * @param lottery The category that the address entered into.
-     * @param txHash The transaction hash of the "enter" function call.
-     * @param blockHash The block hash of the "enter" function call.
-     */
-    event Loss(address indexed entrant, address indexed baseAddress, uint8 indexed lottery, bytes32 txHash, bytes32 blockHash);
 }

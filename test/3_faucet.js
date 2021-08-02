@@ -22,14 +22,14 @@ let fromNowOneHour, startTime, newTime
 const config = () => {
 
   categories = [
-    "1",
-    "100",
-    "1000",
-    "10000",
-    "25000",
-    "50000",
-    "100000",
-    "100000"
+    "1",            // 0
+    "100",          // 1
+    "1000",         // 2
+    "10000",        // 3
+    "25000",        // 4
+    "50000",        // 5
+    "100000",       // 6
+    "100000"        // 7
   ]
 
   odds = [
@@ -54,6 +54,29 @@ const config = () => {
   }
 }
 
+const setUpCategories = async () => {
+  const accs = [
+    "0x0000000000000000000000000000000000000001",
+    "0x0000000000000000000000000000000000000002",
+    "0x0000000000000000000000000000000000000003",
+    "0x0000000000000000000000000000000000000004",
+    "0x0000000000000000000000000000000000000005",
+    "0x0000000000000000000000000000000000000006",
+    "0x0000000000000000000000000000000000000007",
+    "0x0000000000000000000000000000000000000008"
+  ]
+
+  await free.transfer(accs[1], utils.toWei("1"), {from: freeHolder})
+  await free.transfer(accs[2], utils.toWei("100"), {from: freeHolder})
+  await free.transfer(accs[3], utils.toWei("1000"), {from: freeHolder})
+  await free.transfer(accs[4], utils.toWei("10000"), {from: freeHolder})
+  await free.transfer(accs[5], utils.toWei("25000"), {from: freeHolder})
+  await free.transfer(accs[6], utils.toWei("50000"), {from: freeHolder})
+  await free.transfer(accs[7], utils.toWei("100000"), {from: freeHolder})
+
+  return accs
+}
+
 const setUp = async () => {
   [ admin, coordinator, governance, user, freeHolder ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
@@ -64,7 +87,7 @@ const setUp = async () => {
     18,
     admin,
     governance,
-    {from: freeHolder}
+    {from: admin}
   )
 
   fmn = await Fmn.new(
@@ -73,8 +96,11 @@ const setUp = async () => {
     18,
     admin,
     governance,
-    {from: freeHolder}
+    {from: admin}
   )
+
+  await free.initialMint(freeHolder, {from: admin})
+  await fmn.initialMint(freeHolder, {from: admin})
 
   faucetLayout = await Faucet.new({from: admin})
   faucetProxy = await FaucetProxy.new(faucetLayout.address, {from: admin})
@@ -114,8 +140,21 @@ const setTimes = async () => {
   fromNowOneHour = startTime + 3605
 }
 
-const enterIntoDraw = async (account, lottery, tx, block) => {
-  return await faucet.resolveEntry(account, lottery, tx, block, {from: coordinator})
+const checkAndReward = async (account, txHash, blockHash) => {
+  const cat = (await faucet.getCategory(account)).toNumber()
+  let result = await faucet.checkIfWin(cat, txHash, blockHash)
+  let enteredValue = new BigNumber(result["0"].toString())
+  let limitValue = new BigNumber(result["1"].toString())
+
+  if(limitValue.isEqualTo("0")) {
+    receipt = "Loss"
+  } else if(enteredValue.isLessThanOrEqualTo(limitValue)) {
+    receipt = await faucet.rewardAndUpdate(account, cat, txHash, blockHash, {from: coordinator})
+  } else {
+    receipt = "Loss"
+  }
+
+  return receipt
 }
 
 const advanceBlockAtTime = async time => {
@@ -270,7 +309,7 @@ contract("Faucet Contract", async () => {
     const balBefore = Number(utils.fromWei(await fmn.balanceOf(freeHolder)))
 
     const { txHash, blockHash } = utils.getHashes(await faucet.claim(freeHolder, {from: freeHolder}))
-    const result = await enterIntoDraw(freeHolder, 7, txHash, blockHash)
+    await checkAndReward(freeHolder, txHash, blockHash)
 
     const balAfter = Number(utils.fromWei(await fmn.balanceOf(freeHolder)))
 
@@ -284,7 +323,7 @@ contract("Faucet Contract", async () => {
     const balFHBefore = Number(utils.fromWei(await fmn.balanceOf(freeHolder)))
 
     const { txHash, blockHash } = utils.getHashes(await faucet.claim(freeHolder, {from: user}))
-    const result = await enterIntoDraw(freeHolder, 7, txHash, blockHash)
+    await checkAndReward(freeHolder, txHash, blockHash)
 
     const balUserAfter = Number(utils.fromWei(await fmn.balanceOf(user)))
     const balFHAfter = Number(utils.fromWei(await fmn.balanceOf(freeHolder)))
@@ -418,7 +457,7 @@ contract("Faucet Contract", async () => {
     await faucet.subscribe(user, {value: utils.toWei("1")})
     const { txHash, blockHash } = utils.getHashes(await faucet.claim(user))
 
-    await enterIntoDraw(user, 1, txHash, blockHash)
+    await checkAndReward(user, txHash, blockHash)
   })
 
 
@@ -432,7 +471,7 @@ contract("Faucet Contract", async () => {
     }
 
     const { txHash, blockHash } = utils.getHashes(await faucet.claim(freeHolder, {from: freeHolder}))
-    const result = await enterIntoDraw(freeHolder, 7, txHash, blockHash)
+    const result = await checkAndReward(freeHolder, txHash, blockHash)
 
     let oddsAfter = []
     for(let i = 0; i < 8; i++) {
@@ -463,7 +502,7 @@ contract("Faucet Contract", async () => {
 
     const { txHash, blockHash } = utils.getHashes(await faucet.claim(freeHolder, {from: freeHolder}))
     const fmnBalBefore = Number(utils.fromWei(await fmn.balanceOf(freeHolder)))
-    const result = await enterIntoDraw(freeHolder, 7, txHash, blockHash)
+    const result = await checkAndReward(freeHolder, txHash, blockHash)
 
     claims = (await faucet.claims()).toNumber()
     claimsSinceLastWin = (await faucet.claimsSinceLastWin()).toNumber()
@@ -479,12 +518,19 @@ contract("Faucet Contract", async () => {
 
 
   // LOSING THE DRAW
-  it("Should emit \"Loss\" event on lottery loss", async () => {
+  it("Should not award FMN after not winning the lottery", async () => {
     await faucet.subscribe(freeHolder, {from: freeHolder, value: utils.toWei("1")})
-    const { txHash, blockHash } = utils.getHashes(await faucet.claim(freeHolder, {from: freeHolder}))
-    const result = await enterIntoDraw(freeHolder, 0, txHash, blockHash)
+    const fmnBalBefore = utils.fromWei(await fmn.balanceOf(freeHolder))
 
-    expect(result.logs[0].event).to.equal("Loss")
+    const bal = utils.fromWei(await free.balanceOf(freeHolder))
+    await free.burn(utils.toWei(bal), {from: freeHolder})
+
+    const { txHash, blockHash } = utils.getHashes(await faucet.claim(freeHolder, {from: freeHolder}))
+
+    await checkAndReward(freeHolder, txHash, blockHash)
+    const fmnBalAfter = utils.fromWei(await fmn.balanceOf(freeHolder))
+
+    expect(fmnBalAfter).to.equal(fmnBalBefore)
   })
 
 
@@ -560,5 +606,44 @@ contract("Faucet Contract", async () => {
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: Insufficient FSN funds."
     )
+  })
+
+  it("Should give the correct category for the balance of FREE", async () => {
+    const accs = await setUpCategories()
+
+    // for(let ii = 0; ii < categories.length; ii++) {
+    //   let cat = await faucet.getCategory(accs[ii])
+    //   let odds = await faucet.odds(cat)
+    //   let balance = utils.fromWei(await free.balanceOf(accs[ii]))
+    //   console.log(`Category: ${cat.toString()}, Odds: ${odds.toString()}, Balance: ${balance}`)
+    // }
+
+    for(let ii = 0; ii < accs.length; ii++) {
+      let cat = (await faucet.getCategory(accs[ii])).toNumber()
+
+      expect(cat).to.equal(ii)
+    }
+  })
+
+  it("Should give the correct odds for each category", async () => {
+    const accs = await setUpCategories()
+
+    for(let ii = 0; ii < accs.length; ii++) {
+      let cat = (await faucet.getCategory(accs[ii])).toNumber()
+      let checkOdds = (await faucet.odds(cat)).toString()
+
+      expect(checkOdds).to.equal(odds[ii])
+    }
+  })
+
+  it("Should give the correct balance thresholds for each category", async () => {
+    const accs = await setUpCategories()
+
+    for(let ii = 0; ii < accs.length; ii++) {
+      let cat = (await faucet.getCategory(accs[ii])).toNumber()
+      let balances = utils.fromWei(await faucet.categories(cat))
+
+      expect(balances).to.equal(categories[ii])
+    }
   })
 })

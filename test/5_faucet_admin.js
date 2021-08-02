@@ -183,7 +183,7 @@ contract("Faucet Upgradeability Tests", async () => {
   it("Should allow admin to pause all functions", async () => {
     await setUp()
 
-    await truffleAssert.passes(faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin}))
+    await truffleAssert.passes(faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim" ], {from: admin}))
   })
 
   it("Should allow admin to unpause 1 function", async () => {
@@ -195,16 +195,16 @@ contract("Faucet Upgradeability Tests", async () => {
 
   it("Should allow admin to unpause all functions", async () => {
     await setUp()
-    await faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin})
+    await faucet.setPause(true, [ "subscribe", "claim" ], {from: admin})
 
-    await truffleAssert.passes(faucet.setPause(false, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin}))
+    await truffleAssert.passes(faucet.setPause(false, [ "subscribe", "claim" ], {from: admin}))
   })
 
   it("Should not allow non-admin to pause functions", async () => {
     await setUp()
     
     await truffleAssert.fails(
-      faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: user}),
+      faucet.setPause(true, [ "subscribe", "claim" ], {from: user}),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: Only the admin address can perform this operation."
     )
@@ -212,10 +212,10 @@ contract("Faucet Upgradeability Tests", async () => {
 
   it("Should not allow non-admin to unpause functions", async () => {
     await setUp()
-    await faucet.setPause(true, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: admin})
+    await faucet.setPause(true, [ "subscribe", "claim" ], {from: admin})
     
     await truffleAssert.fails(
-      faucet.setPause(false, [ "subscribe", "swapTimelockForFree", "claim", "resolveEntry" ], {from: user}),
+      faucet.setPause(false, [ "subscribe", "claim" ], {from: user}),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: Only the admin address can perform this operation."
     )

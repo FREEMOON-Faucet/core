@@ -95,28 +95,23 @@ contract Faucet is FaucetStorage {
     }
 
     /**
-     * @notice Checks if the account won the lottery and if so, mints them a FREEMOON token.
+     * @notice Mints lottery winners an FMN token.
      *
-     * @param _account The account which owns the entry.
-     * @param _lottery The lottery category the account is taking part in.
+     * @param _account The winning account.
+     * @param _lottery The lottery category the account won.
      * @param _tx The transaction hash of their entry.
      * @param _block The block hash of their entry.
      *
-     * @dev Each time an "Entry" event is emitted, the parameters of the event get fed back into this function to check for a win.
+     * @dev Each time an "Entry" event is emitted, the parameters of the event get checked and if it results in a win, this function is called.
      */
-    function resolveEntry(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public {
-        require(msg.sender == coordinator, "FREEMOON: Only coordinator can resolve entries.");
-        bool win = checkIfWin(_lottery, _tx ,_block);
-        if(win) {
-            _updateOdds();
-            winners++;
-            uint256 claimsTaken = claimsSinceLastWin;
-            claimsSinceLastWin = 0;
-            fmn.rewardWinner(subscribedFor[_account], _lottery);
-            emit Win(_account, subscribedFor[_account], _lottery, _tx, _block, claimsTaken);
-        } else {
-          emit Loss(_account, subscribedFor[_account], _lottery, _tx, _block);
-        }
+    function rewardAndUpdate(address _account, uint8 _lottery, bytes32 _tx, bytes32 _block) public {
+        require(msg.sender == coordinator, "FREEMOON: Only coordinator can perform this operation.");
+        _updateOdds();
+        winners++;
+        uint256 _claimsTaken = claimsSinceLastWin;
+        claimsSinceLastWin = 0;
+        fmn.rewardWinner(subscribedFor[_account], _lottery);
+        emit Win(_account, subscribedFor[_account], _lottery, _tx, _block, _claimsTaken);
     }
 
     /**
@@ -171,19 +166,22 @@ contract Faucet is FaucetStorage {
     }
 
     /**
-     * @notice Checks if the given transaction hash and block hash won the given lottery category.
+     * @notice Gets the entered random number and the number which determines if the random number won.
      *
      * @param _lottery The lottery category being entered, this determines the odds of winning.
      * @param _tx The transaction hash which will determine the random number.
      * @param _block The block hash, which will determine the random number.
+     *
+     * @return The entered random number.
+     * @return The number which the random number must be below in order to win.
      */
-    function checkIfWin(uint8 _lottery, bytes32 _tx, bytes32 _block) public view returns(bool) {
+    function checkIfWin(uint8 _lottery, bytes32 _tx, bytes32 _block) public view returns(uint256, uint256) {
         if(odds[_lottery] == 0) {
-            return false;
+            return (0, 0);
         } else {
             uint256 maxWinAmount = MAX_UINT256 / odds[_lottery];
             uint256 entryValue = uint256(keccak256(abi.encodePacked(_lottery, _tx, _block)));
-            return bool(entryValue <= maxWinAmount);
+            return (entryValue, maxWinAmount);
         }
     }
 
@@ -191,6 +189,8 @@ contract Faucet is FaucetStorage {
      * @notice Gets the category determining the given account's odds of success, this is determined by their FREE balance.
      *
      * @param _account The address to check.
+     *
+     * @return The category the account is in based on their current balance.
      */
     function getCategory(address _account) public view returns(uint8) {
         uint256 bal = free.balanceOf(_account);
@@ -205,6 +205,10 @@ contract Faucet is FaucetStorage {
             }
         }
 
+        if(bal >= categories[CATEGORIES - 1]) {
+            lottery = CATEGORIES - 1;
+        }
+
         return lottery;
     }
 
@@ -212,6 +216,8 @@ contract Faucet is FaucetStorage {
      * @notice Checks if a given account has made enough entries (since their last FREE payout) to receive their next FREE payout.
      *
      * @param _account The address to check.
+     *
+     * @return Whether the account has claimed enough to be paid FREE.
      */
     function getPayoutStatus(address _account) public view returns(bool) {
         return payoutStatus[_account] >= payoutThreshold;
