@@ -1,6 +1,6 @@
 
 const FaucetProxy = artifacts.require("FaucetProxy")
-const FaucetLayout = artifacts.require("NewFaucetLayout")
+const FaucetLayout = artifacts.require("Faucet")
 
 const FAUCET_ADDRESS = "0x7aBf00a759f5F377f0cF885D168803E9D326f387"
 
