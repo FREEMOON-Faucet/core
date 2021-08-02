@@ -5,11 +5,11 @@ import "../airdrop/Airdrop.sol";
 
 
 contract NewAirdropLayout is Airdrop {
-    function setUint(string memory _name, uint256 _val) public {
-        _uintStorage[_name] = _val;
+    function setAddress(string memory _name, address _val) public {
+        _addressStorage[_name] = _val;
     }
 
-    function getUint(string memory _name) public view returns(uint256) {
-        return _uintStorage[_name];
+    function getAddress(string memory _name) public view returns(address) {
+        return _addressStorage[_name];
     }
 }

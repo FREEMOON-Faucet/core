@@ -4,9 +4,16 @@ const AirdropLayout = artifacts.require("NewAirdropLayout")
 
 const AIRDROP_ADDRESS = "0xeE59ee5f266855426E3a519c555dc9cB00aC67b0"
 
+let admin
 let airdropLayout, airdropProxy
 
+const logDeployed = (msg, addr) => {
+  if(addr) console.log(`${msg} ${addr}`)
+  else console.log(`${msg}`)
+}
+
 const upgradeAirdrop = async () => {
+  [ admin ] = await web3.eth.getAccounts()
   airdropProxy = await AirdropProxy.at(AIRDROP_ADDRESS, {from: admin})
 
   try {
@@ -36,6 +43,24 @@ const upgradeAirdrop = async () => {
     New address set in airdrop: ${NEW_AIRDROP_ADDRESS},
     - They should be the same.
   `)
+
+  airdrop = await AirdropLayout.at(AIRDROP_ADDRESS, {from: admin})
+
+  try {
+    logDeployed("Setting new storage variable in airdrop contract ...")
+
+    let testVal = "0x1111111111111111111111111111111111111111"
+
+    await airdrop.setAddress("testValue", testVal)
+
+    logDeployed("New storage variable set:", testVal)
+  } catch(err) {
+    throw new Error(`Failed to set new storage variable in airdrop contract: ${err.message}`)
+  }
+
+  const testValSet = (await airdrop.getAddress("testValue")).toString()
+
+  console.log(`Test value returned from contract: ${testValSet}`)
 }
 
 try {

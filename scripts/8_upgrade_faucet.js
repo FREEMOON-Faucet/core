@@ -4,9 +4,16 @@ const FaucetLayout = artifacts.require("NewFaucetLayout")
 
 const FAUCET_ADDRESS = "0x7aBf00a759f5F377f0cF885D168803E9D326f387"
 
+let admin
 let faucetLayout, faucetProxy
 
+const logDeployed = (msg, addr) => {
+  if(addr) console.log(`${msg} ${addr}`)
+  else console.log(`${msg}`)
+}
+
 const upgradeFaucet = async () => {
+  [ admin ] = await web3.eth.getAccounts()
   faucetProxy = await FaucetProxy.at(FAUCET_ADDRESS, {from: admin})
 
   try {
@@ -36,6 +43,24 @@ const upgradeFaucet = async () => {
     New address set in faucet: ${NEW_FAUCET_ADDRESS},
     - They should be the same.
   `)
+
+  faucet = await FaucetLayout.at(FAUCET_ADDRESS, {from: admin})
+
+  try {
+    logDeployed("Setting new storage variable in faucet contract ...")
+
+    let testVal = 1028
+
+    await faucet.setUint("testValue", testVal, {from: admin})
+
+    logDeployed("New storage variable set:", testVal)
+  } catch(err) {
+    throw new Error(`Failed to set new storage variable in faucet contract: ${err.message}`)
+  }
+
+  const testValSet = (await faucet.getUint("testValue")).toString()
+
+  console.log(`Test value returned from contract: ${testValSet}`)
 }
 
 try {
