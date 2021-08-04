@@ -8,17 +8,14 @@ const addresses = require("../addresses")
 require("dotenv").config()
 
 const GOV = process.env.GOV_PUBLIC
-const COORDINATOR = process.env.COORDINATOR_PUBLIC
 
-const FREE_ADDRESS = addresses.testnet.free
-const FAUCET_ADDRESS = addresses.testnet.faucet
-
-// const AIRDROP_ADDRESS = addresses.testnet.airdrop
+const FREE_ADDRESS = addresses.mainnet.free
+const FAUCET_ADDRESS = addresses.mainnet.faucet
 
 const FSN = "0xffffffffffffffffffffffffffffffffffffffff"
-const CHNG = addresses.testnet.chng
-const ANY = addresses.testnet.any
-const FSN_FUSE = addresses.testnet.fsnFuse
+const CHNG = addresses.mainnet.chng
+const ANY = addresses.mainnet.any
+const FSN_FUSE = addresses.mainnet.fsnFuse
 
 let admin
 let airdropLayout, airdropProxy, airdrop
@@ -81,7 +78,7 @@ const deployAirdrop = async () => {
     throw new Error(`Airdrop proxy contract deployment failed: ${err.message}`)
   }
 
-  airdrop = await Airdrop.at(AIRDROP_ADDRESS, {from: admin})
+  airdrop = await Airdrop.at(airdropProxy.address, {from: admin})
   
   try {
     logDeployed("Initializing airdrop contract ...")
@@ -104,7 +101,6 @@ const deployAirdrop = async () => {
     
     await airdrop.updateParams(
       admin,
-      COORDINATOR,
       airdropAmount,
       airdropCooldown,
       {from: admin}
@@ -126,14 +122,12 @@ const deployAirdrop = async () => {
   }
   
   const _ADMIN = await airdrop.admin()
-  const _COORDINATOR = await airdrop.coordinator()
   const _GOV = await airdrop.governance()
   const _AA = utils.fromWei(await airdrop.airdropAmount())
   const _AC = (await airdrop.airdropCooldown()).toString()
 
   console.log(`
     Admin: ${_ADMIN},
-    Coordinator: ${_COORDINATOR},
     Governance: ${_GOV},
     -----------------
     Airdrop Amount: ${_AA},

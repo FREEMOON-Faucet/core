@@ -4,10 +4,10 @@ const Fmn = artifacts.require("FMN")
 
 const addresses = require("../addresses")
 
-const FREE_ADDRESS = addresses.testnet.free
-const FMN_ADDRESS = addresses.testnet.fmn
-const FAUCET_ADDRESS = addresses.testnet.faucet
-const AIRDROP_ADDRESS = addresses.testnet.airdrop
+const FREE_ADDRESS = addresses.mainnet.free
+const FMN_ADDRESS = addresses.mainnet.fmn
+const FAUCET_ADDRESS = addresses.mainnet.faucet
+const AIRDROP_ADDRESS = addresses.mainnet.airdrop
 
 let admin
 let free, fmn

@@ -138,7 +138,6 @@ const setUp = async () => {
 
   await airdrop.updateParams(
     admin,
-    coordinator,
     airdropAmount,
     airdropCooldown,
     {from: admin}

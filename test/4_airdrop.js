@@ -139,7 +139,6 @@ const setUp = async () => {
 
   await airdrop.updateParams(
     admin,
-    coordinator,
     airdropAmount,
     airdropCooldown,
     {from: admin}
@@ -220,11 +219,9 @@ contract("Airdrop Contract", async () => {
   // INITIAL VALUES
   it("Should set the correct addresses for admin, coordinator and governance", async () => {
     const adminSet = await airdrop.admin()
-    const coordinatorSet = await airdrop.coordinator()
     const governanceSet = await airdrop.governance()
 
     expect(adminSet).to.equal(admin)
-    expect(coordinatorSet).to.equal(coordinator)
     expect(governanceSet).to.equal(governance)
   })
 
@@ -284,12 +281,12 @@ contract("Airdrop Contract", async () => {
   })
 
   it("Should allow governance address to update airdrop parameters", async () => {
-    await truffleAssert.passes(airdrop.updateParams(user, admin, utils.toWei("2"), "3600", {from: governance}))
+    await truffleAssert.passes(airdrop.updateParams(user, utils.toWei("2"), "3600", {from: governance}))
   })
 
   it("Should not allow non-governance address to update airdrop parameters", async () => {
     await truffleAssert.fails(
-      truffleAssert.passes(airdrop.updateParams(user, admin, utils.toWei("2"), "3600", {from: user})),
+      truffleAssert.passes(airdrop.updateParams(user, utils.toWei("2"), "3600", {from: user})),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: Only the governance address can perform this operation."
     )
