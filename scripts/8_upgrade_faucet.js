@@ -44,23 +44,23 @@ const upgradeFaucet = async () => {
     - They should be the same.
   `)
 
-  faucet = await FaucetLayout.at(FAUCET_ADDRESS, {from: admin})
+//  faucet = await FaucetLayout.at(FAUCET_ADDRESS, {from: admin})
 
-  try {
-    logDeployed("Setting new storage variable in faucet contract ...")
+//  try {
+//    logDeployed("Setting new storage variable in faucet contract ...")
 
-    let testVal = 1028
+//    let testVal = 1028
 
-    await faucet.setUint("testValue", testVal, {from: admin})
+//    await faucet.setUint("testValue", testVal, {from: admin})
 
-    logDeployed("New storage variable set:", testVal)
-  } catch(err) {
-    throw new Error(`Failed to set new storage variable in faucet contract: ${err.message}`)
-  }
+//    logDeployed("New storage variable set:", testVal)
+//  } catch(err) {
+//    throw new Error(`Failed to set new storage variable in faucet contract: ${err.message}`)
+//  }
 
-  const testValSet = (await faucet.getUint("testValue")).toString()
+//  const testValSet = (await faucet.getUint("testValue")).toString()
 
-  console.log(`Test value returned from contract: ${testValSet}`)
+//  console.log(`Test value returned from contract: ${testValSet}`)
 }
 
 try {

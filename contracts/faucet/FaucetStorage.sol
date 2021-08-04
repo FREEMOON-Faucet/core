@@ -19,8 +19,6 @@ contract FaucetStorage {
 
     uint8 constant CATEGORIES = 8;
     uint256 constant MAX_UINT256 = 2 ** 256 - 1;
-    bytes32 constant FSN_ASSET_ID = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    uint64 constant FOUR_MONTHS = 3600 * 24 * 30 * 4;
 
     // Configurable parameters
     uint256 public subscriptionCost;
@@ -47,22 +45,23 @@ contract FaucetStorage {
     mapping(string => uint256) public _uintStorage;
     mapping(string => address) public _addressStorage;
     mapping(string => bool) public _boolStorage;
+    mapping(string => bytes32) public _bytes32Storage;
 
     /**
-     * @notice Emitted whenever an address enters the FREEMOON draw.
+     * @notice Emitted whenever an address enters the FMN draw.
      *
-     * @param entrant The address entering the FREEMOON draw.
+     * @param entrant The address entering the FMN draw.
      * @param baseAddress The address who the claimant is entering for.
      * @param lottery The category determining the entrant's odds of success, this is determined by their FREE balance.
      *
-     * @dev A listener for this event responds by rewarding FREEMOON to the entrant if successful in the lottery category.
+     * @dev A listener for this event responds by rewarding FMN to the entrant if successful in the lottery category.
      */
     event Entry(address indexed entrant, address indexed baseAddress, uint8 indexed lottery);
 
     /**
-     * @notice Emitted when an entry wins the lottery and the address is awarded a FREEMOON.
+     * @notice Emitted when an entry wins the lottery and the address is awarded a FMN.
      *
-     * @param entrant The address who entered the FREEMOON draw.
+     * @param entrant The address who entered the FMN draw.
      * @param baseAddress The address that entrant is subscribed for.
      * @param lottery The category that the address entered into.
      * @param txHash The transaction hash of the "enter" function call.

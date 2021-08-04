@@ -71,7 +71,7 @@ contract Faucet is FaucetStorage {
     }
 
     /**
-     * @notice Claims FREE for a given address and enters them into the FMN draw.
+     * @notice Claims FREE for a given address and enters them into the FMN lottery.
      *
      * @param _claimant The address to claim for. They must be subscribed to the faucet.
      */
@@ -95,7 +95,7 @@ contract Faucet is FaucetStorage {
     }
 
     /**
-     * @notice Mints lottery winners an FMN token.
+     * @notice Rewards lottery winners an FMN token.
      *
      * @param _account The winning account.
      * @param _lottery The lottery category the account won.
@@ -125,7 +125,7 @@ contract Faucet is FaucetStorage {
         require(_amount <= address(this).balance, "FREEMOON: Insufficient FSN funds.");
         payable(_to).transfer(_amount);
     }
-    
+
     /**
      * @notice Update the parameters around which the faucet operates. Only possible from governance vote.
      *
@@ -224,7 +224,7 @@ contract Faucet is FaucetStorage {
     }
 
     /**
-     * @notice Every time a FMN token is won, the chances of winning one are globally reduced by 10%.
+     * @notice Every time an FMN token is won, the chances of winning one are globally reduced by 10%.
      */
     function _updateOdds() private {
         for(uint8 i = 0; i < CATEGORIES; i++) {
@@ -234,5 +234,9 @@ contract Faucet is FaucetStorage {
                 odds[i] += odds[i] / 10;
             }
         }
+    }
+
+    function checkIsSubscribed(address _account) external view returns(bool) {
+        return isSubscribed[_account];
     }
 }

@@ -2,7 +2,6 @@
 pragma solidity 0.8.5;
 
 import "./AirdropStorage.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title FREE Token Airdrops
@@ -20,8 +19,7 @@ contract Airdrop is AirdropStorage {
     }
     
     /**
-     * @notice On deployment, the initial airdrop parameters are set.
-     * @notice The coordinator address is set in order to manage the daily airdrops.
+     * @notice On deployment, the relevant addresses are set.
      *
      * @param _admin The admin address, used to deploy and maintain the contract.
      * @param _governance The governance address, used to vote for updating the contract and its parameters.
@@ -49,7 +47,7 @@ contract Airdrop is AirdropStorage {
      * @param _balRequired The balances of these tokens required to receive the FREE airdrop.
      */
     function setAssets(address[] memory _assets, uint256[] memory _balRequired) public {
-        require(msg.sender == governance || (msg.sender == admin &&!assetsInitialized), "FREEMOON: Only the governance address can set assets after initialization.");
+        require(msg.sender == governance || (msg.sender == admin && !assetsInitialized), "FREEMOON: Only the governance address can set assets after initialization.");
         for(uint8 i = 0; i < _assets.length; i++) {
             require(_balRequired[i] != 0, "FREEMOON: Cannot set the required balance of an asset zero.");
             if(balRequiredFor[_assets[i]] == 0) {
@@ -62,11 +60,11 @@ contract Airdrop is AirdropStorage {
     }
 
     /**
-     * @notice Subscribed addresses can claim their airdrop once every set cooldown period.
+     * @notice Subscribed addresses can claim their airdrop once every set cooldown time.
      * @notice The amount is based on their balance of eligible assets.
      */
     function claimAirdrop() public isNotPaused("claimAirdrop") {
-        require(faucet.isSubscribed(msg.sender), "FREEMOON: Only faucet subscribers can claim airdrops.");
+        require(faucet.checkIsSubscribed(msg.sender), "FREEMOON: Only faucet subscribers can claim airdrops.");
         require(previousClaim[msg.sender] + airdropCooldown <= block.timestamp, "FREEMOON: This address has claimed airdrop recently.");
         uint256 airdropClaimable = getClaimable(msg.sender);
         if(airdropClaimable > 0) {

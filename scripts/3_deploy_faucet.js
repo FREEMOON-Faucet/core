@@ -50,8 +50,8 @@ const config = () => {
     cooldownTime: "3600", // 1 hour
     payoutThreshold: "1", // 1 entry == receive FREE
     payoutAmount: utils.toWei("1"), // 1 FREE
-    hotWalletLimit: utils.toWei("10"), // 10 FSN max wallet balance
-    categories: categories.map(cat => utils.toWei(cat)), // balances required for each FREEMOON lottery category
+    hotWalletLimit: utils.toWei("500"), // 500 FSN max wallet balance
+    categories: categories.map(cat => utils.toWei(cat)), // balances required for each FMN lottery category
     odds: odds // odds of winning for each category
   }
 }
@@ -81,7 +81,7 @@ const deployFaucet = async () => {
   }
 
   faucet = await Faucet.at(faucetProxy.address, {from: admin})
-  
+
   try {
     logDeployed("Initializing faucet contract ...")
     

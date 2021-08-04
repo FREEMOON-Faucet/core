@@ -62,7 +62,10 @@ module.exports = {
     fsnTestnet: {
       url: "https://testway.freemoon.xyz/gate",
       chainId: 46688,
-      accounts: [ process.env.ADMIN_PRIVATE ],
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+        count: 2
+      },
       gas: 8000000,
       gasPrice: 3000000000
     },

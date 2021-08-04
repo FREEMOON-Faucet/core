@@ -3,12 +3,13 @@ pragma solidity 0.8.5;
 
 import "../interfaces/IFREE.sol";
 import "../interfaces/IFaucet.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 contract AirdropStorage {
 
-    IFREE public free;
-    IFaucet public faucet;
+    IFREE free;
+    IFaucet faucet;
 
     address public admin;
     address public coordinator;

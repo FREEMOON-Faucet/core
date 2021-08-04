@@ -13,9 +13,9 @@ const FREE_ADDRESS = "0x60364ad97beb8EC63d19B021677d02D9152b5E51"
 const FAUCET_ADDRESS = "0x7aBf00a759f5F377f0cF885D168803E9D326f387"
 
 const FSN = "0xffffffffffffffffffffffffffffffffffffffff"
-const CHNG = "0xf7eD89b804CC22Cb188986Eeb6D5F01d522d5138"
-const ANY = "0x8B0Cb6c96522a5e27466808D6992838044ae7192"
-const FSN_FUSE = "0x2ac2055cea2FDc44850F7fE52EAFD18e64a77984"
+const CHNG = "0xed0294dbd2a0e52a09c3f38a09f6e03de2c44fcf"
+const ANY = "0x0c74199d22f732039e843366a236ff4f61986b32"
+const FSN_FUSE = "0xe96ac326ecea1a09ae6e47487c5d8717f73d5a7e"
 
 let admin
 let airdropLayout, airdropProxy, airdrop

@@ -1,7 +1,7 @@
 
 const Faucet = artifacts.require("Faucet")
 
-const FAUCET_ADDRESS = ""
+const FAUCET_ADDRESS = "0x65D484355D7b770Dd73E81a22a3199b8BA4e3c2C"
 
 let faucet
 

@@ -20,7 +20,6 @@ let categories, odds
 let fromNowOneHour, startTime, newTime
 
 const config = () => {
-
   categories = [
     "1",            // 0
     "100",          // 1
@@ -33,14 +32,14 @@ const config = () => {
   ]
 
   odds = [
-    "0",
-    "1000000000",
-    "100000000",
-    "10000000",
-    "1000000",
-    "500000",
-    "250000",
-    "1" // 100% chance of winning for testing only
+    "0",            // 0
+    "1000000000",   // 1
+    "100000000",    // 2
+    "10000000",     // 3
+    "1000000",      // 4
+    "500000",       // 5
+    "250000",       // 6
+    "1"             // 7
   ]
 
   return {
@@ -612,10 +611,10 @@ contract("Faucet Contract", async () => {
     const accs = await setUpCategories()
 
     // for(let ii = 0; ii < categories.length; ii++) {
+    //   let balance = utils.fromWei(await free.balanceOf(accs[ii]))
     //   let cat = await faucet.getCategory(accs[ii])
     //   let odds = await faucet.odds(cat)
-    //   let balance = utils.fromWei(await free.balanceOf(accs[ii]))
-    //   console.log(`Category: ${cat.toString()}, Odds: ${odds.toString()}, Balance: ${balance}`)
+    //   console.log(`Balance: ${balance}, Category: ${cat.toString()}, Odds: ${odds.toString()}`)
     // }
 
     for(let ii = 0; ii < accs.length; ii++) {
