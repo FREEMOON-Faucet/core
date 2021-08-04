@@ -3,16 +3,17 @@ const Faucet = artifacts.require("Faucet")
 const FaucetProxy = artifacts.require("FaucetProxy")
 
 const utils = require("./99_utils")
+const addresses = require("../addresses")
 
 require("dotenv").config()
 
 const GOV = process.env.GOV_PUBLIC
 const COORDINATOR = process.env.COORDINATOR_PUBLIC
 
-const FREE_ADDRESS = "0x60364ad97beb8EC63d19B021677d02D9152b5E51"
-const FMN_ADDRESS = "0x3EF3feC91F85926a25732A2bD8bE5f9A8BFC40e1"
+const FREE_ADDRESS = addresses.testnet.free
+const FMN_ADDRESS = addresses.testnet.fmn
 
-// const FAUCET_ADDRESS = "0x7aBf00a759f5F377f0cF885D168803E9D326f387"
+// const FAUCET_ADDRESS = addresses.testnet.faucet
 
 let admin
 let faucetLayout, faucetProxy, faucet
@@ -50,7 +51,7 @@ const config = () => {
     cooldownTime: "3600", // 1 hour
     payoutThreshold: "1", // 1 entry == receive FREE
     payoutAmount: utils.toWei("1"), // 1 FREE
-    hotWalletLimit: utils.toWei("500"), // 500 FSN max wallet balance
+    hotWalletLimit: utils.toWei("50"), // 50 FSN max wallet balance
     categories: categories.map(cat => utils.toWei(cat)), // balances required for each FMN lottery category
     odds: odds // odds of winning for each category
   }

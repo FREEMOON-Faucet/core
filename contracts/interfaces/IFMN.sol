@@ -3,5 +3,5 @@ pragma solidity 0.8.5;
 
 
 interface IFMN {
-    function rewardWinner(address _account, uint8 _lottery) external;
+    function rewardWinner(address _winner, uint8 _lottery) external;
 }

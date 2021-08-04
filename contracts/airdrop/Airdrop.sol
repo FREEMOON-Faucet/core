@@ -44,18 +44,20 @@ contract Airdrop is AirdropStorage {
      * @notice Adds new asset balances eligible for a FREE airdrop, or changes existing ones.
      *
      * @param _assets The addresses of the tokens to be added as eligible.
-     * @param _balRequired The balances of these tokens required to receive the FREE airdrop.
+     * @param _balances The balances of these tokens required to receive the FREE airdrop.
      */
-    function setAssets(address[] memory _assets, uint256[] memory _balRequired) public {
+    function setAssets(address[] memory _assets, uint256[] memory _balances) public {
         require(msg.sender == governance || (msg.sender == admin && !assetsInitialized), "FREEMOON: Only the governance address can set assets after initialization.");
+
         for(uint8 i = 0; i < _assets.length; i++) {
-            require(_balRequired[i] != 0, "FREEMOON: Cannot set the required balance of an asset zero.");
-            if(balRequiredFor[_assets[i]] == 0) {
-                assetCount++;
+            require(_balances[i] != 0, "FREEMOON: Cannot set balance required for an asset to zero.");
+            if(balanceRequired[_assets[i]] == 0) {
+                airdropAssetCount++;
             }
-            balRequiredFor[_assets[i]] = _balRequired[i];
-            eligibleAssets.push(_assets[i]);
+            balanceRequired[_assets[i]] = _balances[i];
+            airdropAssets.push(_assets[i]);
         }
+
         assetsInitialized = true;
     }
 
@@ -72,51 +74,17 @@ contract Airdrop is AirdropStorage {
             free.mint(msg.sender, airdropClaimable);
         }
     }
-
-    /**
-     * @notice Calculates the amount of FREE currently claimable by an address.
-     *
-     * @param _by The address being checked.
-     */
-    function getClaimable(address _by) public view returns(uint256) {
-        uint256 freeOwed;
-
-        if(previousClaim[_by] + airdropCooldown <= block.timestamp) {
-            for(uint8 i = 0; i < eligibleAssets.length; i++) {
-                uint256 bal;
-                if(eligibleAssets[i] == FSN_ADDRESS) {
-                    bal = _by.balance;
-                } else {
-                    bal = IERC20(eligibleAssets[i]).balanceOf(_by);
-                }
-                if(bal >= balRequiredFor[eligibleAssets[i]]) {
-                    uint256 balRemaining = bal;
-                    uint256 payments = 0;
-
-                    while(balRemaining >= balRequiredFor[eligibleAssets[i]]) {
-                        payments++;
-                        balRemaining -= balRequiredFor[eligibleAssets[i]];
-                    }
-
-                    freeOwed += payments * airdropAmount;
-                }
-            }
-        }
-
-        return freeOwed;
-    }
     
     /**
      * @notice Update the parameters around which the faucet operates. Only possible from governance vote.
      *
-     * @param _coordinator The address of the faucet coordinator.
+     * @param _admin The deployer address.
      * @param _airdropAmount The amount of FREE given to each recipient in each airdrop.
      * @param _airdropCooldown The time in seconds between each airdrop.
      */
-    function updateParams(address _admin, address _coordinator, uint256 _airdropAmount, uint256 _airdropCooldown) public {
+    function updateParams(address _admin, uint256 _airdropAmount, uint256 _airdropCooldown) public {
         require(msg.sender == governance || (msg.sender == admin && !paramsInitialized), "FREEMOON: Only the governance address can perform this operation.");
         admin = _admin;
-        coordinator = _coordinator;
         airdropAmount = _airdropAmount;
         airdropCooldown = _airdropCooldown;
 
@@ -138,5 +106,35 @@ contract Airdrop is AirdropStorage {
                 continue;
             }
         }
+    }
+
+    /**
+     * @notice Calculates the amount of FREE currently claimable by an address.
+     *
+     * @param _by The address being checked.
+     */
+    function getClaimable(address _by) public view returns(uint256) {
+        uint256 freeOwed;
+        uint256 bal;
+        uint256 netFree;
+
+        if(block.timestamp <= previousClaim[_by] + airdropCooldown) {
+            return 0;
+        }
+
+        for(uint8 i = 0; i < airdropAssetCount; i++) {
+            if(airdropAssets[i] == FSN_ADDRESS) {
+                bal = _by.balance;
+            } else {
+                bal = IERC20(airdropAssets[i]).balanceOf(_by);
+            }
+
+            if(bal > 0) {
+                netFree = bal / balanceRequired[airdropAssets[i]];
+                freeOwed += netFree * airdropAmount;
+            }
+        }
+
+        return freeOwed;
     }
 }

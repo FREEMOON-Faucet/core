@@ -14,10 +14,20 @@ const getHashes = res => {
   }
 }
 
+const impersonate = async acc => {
+  const result = await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [ acc ]
+  })
+
+  return result
+}
+
 
 
 module.exports = {
   toWei,
   fromWei,
-  getHashes
+  getHashes,
+  impersonate
 }

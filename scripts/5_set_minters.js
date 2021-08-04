@@ -2,10 +2,12 @@
 const Free = artifacts.require("FREE")
 const Fmn = artifacts.require("FMN")
 
-const FREE_ADDRESS = "0x60364ad97beb8EC63d19B021677d02D9152b5E51"
-const FMN_ADDRESS = "0x3EF3feC91F85926a25732A2bD8bE5f9A8BFC40e1"
-const FAUCET_ADDRESS = "0x7aBf00a759f5F377f0cF885D168803E9D326f387"
-const AIRDROP_ADDRESS = "0xeE59ee5f266855426E3a519c555dc9cB00aC67b0"
+const addresses = require("../addresses")
+
+const FREE_ADDRESS = addresses.testnet.free
+const FMN_ADDRESS = addresses.testnet.fmn
+const FAUCET_ADDRESS = addresses.testnet.faucet
+const AIRDROP_ADDRESS = addresses.testnet.airdrop
 
 let admin
 let free, fmn

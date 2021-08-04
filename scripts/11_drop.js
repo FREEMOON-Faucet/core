@@ -1,15 +1,19 @@
 
 const Airdrop = artifacts.require("Airdrop")
 const FREE = artifacts.require("FREE")
+const Faucet = artifacts.require("Faucet")
 
 const utils = require("./99_utils")
+const addresses = require("../addresses")
 
 let admin, user
 let airdrop
 let free, chng, any, fsnFuse
+let faucet
 
-const AIRDROP_ADDRESS = "0x60364ad97beb8EC63d19B021677d02D9152b5E51"
-const FREE_ADDRESS = "0xeE59ee5f266855426E3a519c555dc9cB00aC67b0"
+const AIRDROP_ADDRESS = addresses.testnet.airdrop
+const FREE_ADDRESS = addresses.testnet.free
+const FAUCET_ADDRESS = addresses.testnet.faucet
 
 const CHNG_ADDRESS = "0xf7eD89b804CC22Cb188986Eeb6D5F01d522d5138"
 const ANY_ADDRESS = "0x8B0Cb6c96522a5e27466808D6992838044ae7192"
@@ -31,16 +35,25 @@ const drop = async () => {
 
   airdrop = await Airdrop.at(AIRDROP_ADDRESS)
   free = await FREE.at(FREE_ADDRESS)
+  faucet = await Faucet.at(FAUCET_ADDRESS)
 
-  // console.log("Transferring to user ...")
-  // await transfer()
+//   try {
+//     console.log("Subscribing admin ...")
+
+//     await faucet.subscribe(admin, {from: admin, value: utils.toWei("0.0001")})
+
+//     console.log("... Subscribed.")
+//   } catch(err) {
+//     throw new Error(`Subscribing failed: ${err.message}`)
+//   }
 
   try {
-    console.log("Airdropping to admin ...")
+    console.log("Checking claimable by admin ...")
 
     const claimable = utils.fromWei(await airdrop.getClaimable(admin))
-    console.log(`Claimable by admin: ${claimable}`)
+    // console.log(`Claimable by admin: ${claimable}`)
 
+    console.log("Claiming ...")
     await airdrop.claimAirdrop({from: admin})
 
     const freeBal = utils.fromWei(await free.balanceOf(admin))

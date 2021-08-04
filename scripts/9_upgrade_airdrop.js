@@ -2,7 +2,9 @@
 const AirdropProxy = artifacts.require("AirdropProxy")
 const AirdropLayout = artifacts.require("Airdrop")
 
-const AIRDROP_ADDRESS = "0xeE59ee5f266855426E3a519c555dc9cB00aC67b0"
+const addresses = require("../addresses")
+
+const AIRDROP_ADDRESS = addresses.testnet.airdrop
 
 let admin
 let airdropLayout, airdropProxy

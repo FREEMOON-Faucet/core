@@ -231,23 +231,19 @@ contract("Airdrop Contract", async () => {
   it("Should set correct initial airdrop parameters", async () => {
     const aa = utils.fromWei(await airdrop.airdropAmount())
     const ac = (await airdrop.airdropCooldown()).toString()
-    const freeSet = await airdrop.free()
-    const faucetSet = await airdrop.faucet()
 
     let { airdropAmount, airdropCooldown } = config()
     airdropAmount = utils.fromWei(airdropAmount)
 
     expect(aa).to.equal(airdropAmount)
     expect(ac).to.equal(airdropCooldown)
-    expect(freeSet).to.equal(free.address)
-    expect(faucetSet).to.equal(faucet.address)
   })
 
   it("Should set initial assets successfully", async () => {
     const { assets, balancesRequired } = initialAssets()
     await airdrop.setAssets(assets, balancesRequired, {from: admin})
     for(let i = 0; i < assets.length; i++) {
-      let balanceRequirementSet = await airdrop.balRequiredFor(assets[i])
+      let balanceRequirementSet = await airdrop.balanceRequired(assets[i])
       expect(utils.fromWei(balanceRequirementSet)).to.equal(utils.fromWei(balancesRequired[i]))
     }
   })
@@ -261,7 +257,7 @@ contract("Airdrop Contract", async () => {
     await truffleAssert.fails(
       airdrop.setAssets(assets, balancesRequired),
       truffleAssert.ErrorType.REVERT,
-      "FREEMOON: Cannot set the required balance of an asset zero."
+      "FREEMOON: Cannot set balance required for an asset to zero."
     )
   })
 

@@ -66,6 +66,7 @@ contract FaucetStorage {
      * @param lottery The category that the address entered into.
      * @param txHash The transaction hash of the "enter" function call.
      * @param blockHash The block hash of the "enter" function call.
+     * @param claimsTaken The total number of claims since the previous win.
      */
     event Win(address indexed entrant, address indexed baseAddress, uint8 indexed lottery, bytes32 txHash, bytes32 blockHash, uint256 claimsTaken);
 }

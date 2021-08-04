@@ -134,6 +134,7 @@ contract Faucet is FaucetStorage {
      * @param _cooldownTime The time in seconds an address has to wait before entering the FREEMOON draw again.
      * @param _payoutThreshold The number of times an address has to enter the FREEMOON draw before they get their FREE payout.
      * @param _payoutAmount The current amount of FREE payed to addresses who claim.
+     * @param _hotWalletLimit The balance of the hot wallet after which this contract holds the subscription funds, rather than send to hot wallet.
      */
     function updateParams(address _admin, address _coordinator, uint256 _subscriptionCost, uint256 _cooldownTime, uint256 _payoutThreshold, uint256 _payoutAmount, uint256 _hotWalletLimit) public {
         require(msg.sender == governance || (msg.sender == admin && !paramsInitialized), "FREEMOON: Only the governance address can perform this operation.");
@@ -224,6 +225,15 @@ contract Faucet is FaucetStorage {
     }
 
     /**
+     * @notice Checks if the given account is subscribed. Used for external calls.
+     *
+     * @param _account The account to check.
+     */
+    function checkIsSubscribed(address _account) external view returns(bool) {
+        return isSubscribed[_account];
+    }
+
+    /**
      * @notice Every time an FMN token is won, the chances of winning one are globally reduced by 10%.
      */
     function _updateOdds() private {
@@ -234,9 +244,5 @@ contract Faucet is FaucetStorage {
                 odds[i] += odds[i] / 10;
             }
         }
-    }
-
-    function checkIsSubscribed(address _account) external view returns(bool) {
-        return isSubscribed[_account];
     }
 }

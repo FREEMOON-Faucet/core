@@ -3,16 +3,22 @@ const FREE = artifacts.require("FREE")
 const FMN = artifacts.require("FMN")
 
 const utils = require("./99_utils")
+const addresses = require("../addresses")
 
 require("dotenv").config()
 
 const GOV = process.env.GOV_PUBLIC
 
-const FREE_ADDRESS = "0x60364ad97beb8EC63d19B021677d02D9152b5E51"
-const FMN_ADDRESS = "0x3EF3feC91F85926a25732A2bD8bE5f9A8BFC40e1"
+const FREE_ADDRESS = addresses.testnet.free
+const FMN_ADDRESS = addresses.testnet.fmn
 
 let admin
 let free, fmn
+
+const logDeployed = (msg, addr) => {
+  if(addr) console.log(`${msg} ${addr}`)
+  else console.log(`${msg}`)
+}
 
 const initialMint = async () => {
   [ admin ] = await web3.eth.getAccounts()

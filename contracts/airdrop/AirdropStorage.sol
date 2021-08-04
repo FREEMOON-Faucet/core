@@ -25,20 +25,19 @@ contract AirdropStorage {
     uint256 public airdropAmount;
     uint256 public airdropCooldown;
 
-    uint256 public lastAirdrop;
+    uint256 public airdropAssetCount;
+
+    address[] public airdropAssets;
 
     mapping(string => bool) public isPaused;
 
-    mapping(address => uint256) public balRequiredFor;
-    mapping(address => uint256) public airdropOwed;
+    mapping(address => uint256) public balanceRequired;
     mapping(address => uint256) public previousClaim;
-
-    address[] public eligibleAssets;
-    uint256 public assetCount;
 
     mapping(string => uint256) public _uintStorage;
     mapping(string => address) public _addressStorage;
     mapping(string => bool) public _boolStorage;
+    mapping(string => bytes32) public _bytes32Storage;
     
 
     event Airdrop(address indexed recipient, uint256 amount);
