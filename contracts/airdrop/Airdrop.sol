@@ -128,11 +128,11 @@ contract Airdrop is AirdropStorage {
             return 0;
         }
 
-        if(_asset == address(0)) {
-            bal = _by.balance;
-        } else {
+        // if(_asset == address(0)) {
+        //     bal = _by.balance;
+        // } else {
             bal = IERC20(_asset).balanceOf(_by);
-        }
+        // }
 
         if(bal >= balanceRequired[_asset]) {
             uint256 remainder = bal % balanceRequired[_asset];

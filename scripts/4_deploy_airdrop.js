@@ -12,7 +12,7 @@ const GOV = process.env.GOV_PUBLIC
 const FREE_ADDRESS = addresses.testnet.free
 const FAUCET_ADDRESS = addresses.testnet.faucet
 
-const FSN = addresses.testnet.fsn
+// const FSN = addresses.testnet.fsn
 const CHNG = addresses.testnet.chng
 const ANY = addresses.testnet.any
 const FSN_FUSE = addresses.testnet.fsnFuse
@@ -34,14 +34,14 @@ const config = () => {
 
 const initialAssets = () => {
   assets = [
-    FSN,
+    // FSN,
     CHNG,
     ANY,
     FSN_FUSE
   ]
 
   balancesRequired = [
-    "20000",
+    // "20000",
     "50000",
     "10000",
     "100"

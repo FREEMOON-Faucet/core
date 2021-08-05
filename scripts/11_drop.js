@@ -66,18 +66,20 @@ const drop = async () => {
     console.log("Checking claimable by admin ...")
 
     const count = (await airdrop.airdropAssetCount()).toNumber()
-    let asset, claimable
+    let asset, claimableFor
+    let claimable = 0
 
     for(let i = 0; i < count; i++) {
       asset = await airdrop.airdropAssets(i)
-      console.log(utils.fromWei(await airdrop.getClaimable(admin, asset)))
-      claimable += Number(utils.fromWei(await airdrop.getClaimable(admin, asset)))
+      claimableFor = Number(utils.fromWei(await airdrop.getClaimable(admin, asset)))
+      console.log(claimableFor)
+      claimable += claimableFor
     }
     
     console.log(`Claimable by admin: ${claimable}`)
 
-    // console.log("Claiming ...")
-    // await airdrop.claimAirdrop({from: admin})
+    console.log("Claiming ...")
+    await airdrop.claimAirdrop({from: admin})
 
     const freeBal = utils.fromWei(await free.balanceOf(admin))
 
