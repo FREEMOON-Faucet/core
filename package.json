@@ -9,7 +9,11 @@
     "initial-mint": "npx hardhat run scripts/2_initial_mint.js --network fsnTestnet",
     "deploy-faucet": "npx hardhat run scripts/3_deploy_faucet.js --network fsnTestnet",
     "deploy-airdrop": "npx hardhat run scripts/4_deploy_airdrop.js --network fsnTestnet",
-    "set-minters": "npx hardhat run scripts/5_set_minters.js --network fsnTestnet"
+    "set-minters": "npx hardhat run scripts/5_set_minters.js --network fsnTestnet",
+    "pause-faucet": "npx hardhat run scripts/6_pause_faucet.js --network fsnTestnet",
+    "pause-airdrop": "npx hardhat run scripts/7_pause_airdrop.js --network fsnTestnet",
+    "upgrade-faucet": "npx hardhat run scripts/8_upgrade_faucet.js --network fsnTestnet",
+    "upgrade-airdrop": "npx hardhat run scripts/9_upgrade_airdrop.js --network fsnTestnet"
   },
   "repository": {
     "type": "git",

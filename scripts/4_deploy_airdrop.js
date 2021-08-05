@@ -9,13 +9,13 @@ require("dotenv").config()
 
 const GOV = process.env.GOV_PUBLIC
 
-const FREE_ADDRESS = addresses.mainnet.free
-const FAUCET_ADDRESS = addresses.mainnet.faucet
+const FREE_ADDRESS = addresses.testnet.free
+const FAUCET_ADDRESS = addresses.testnet.faucet
 
-const FSN = "0xffffffffffffffffffffffffffffffffffffffff"
-const CHNG = addresses.mainnet.chng
-const ANY = addresses.mainnet.any
-const FSN_FUSE = addresses.mainnet.fsnFuse
+const FSN = addresses.testnet.fsn
+const CHNG = addresses.testnet.chng
+const ANY = addresses.testnet.any
+const FSN_FUSE = addresses.testnet.fsnFuse
 
 let admin
 let airdropLayout, airdropProxy, airdrop

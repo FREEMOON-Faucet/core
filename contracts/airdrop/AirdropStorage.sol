@@ -14,8 +14,6 @@ contract AirdropStorage {
     address public admin;
     address public coordinator;
     address public governance;
-    
-    address constant FSN_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
     bool initialized;
     bool assetsInitialized;
@@ -25,7 +23,7 @@ contract AirdropStorage {
     uint256 public airdropAmount;
     uint256 public airdropCooldown;
 
-    uint256 public airdropAssetCount;
+    uint8 public airdropAssetCount;
 
     address[] public airdropAssets;
 

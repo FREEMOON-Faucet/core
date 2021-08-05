@@ -10,8 +10,8 @@ require("dotenv").config()
 const GOV = process.env.GOV_PUBLIC
 const COORDINATOR = process.env.COORDINATOR_PUBLIC
 
-const FREE_ADDRESS = addresses.mainnet.free
-const FMN_ADDRESS = addresses.mainnet.fmn
+const FREE_ADDRESS = addresses.testnet.free
+const FMN_ADDRESS = addresses.testnet.fmn
 
 let admin
 let faucetLayout, faucetProxy, faucet

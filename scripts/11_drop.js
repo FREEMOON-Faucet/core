@@ -31,30 +31,53 @@ const FSN_FUSE_ADDRESS = "0x2ac2055cea2FDc44850F7fE52EAFD18e64a77984"
 // }
 
 const drop = async () => {
-  [ admin ] = await web3.eth.getAccounts()
+  [ admin, c, governance ] = await web3.eth.getAccounts()
 
   airdrop = await Airdrop.at(AIRDROP_ADDRESS)
   free = await FREE.at(FREE_ADDRESS)
   faucet = await Faucet.at(FAUCET_ADDRESS)
 
-//   try {
-//     console.log("Subscribing admin ...")
+  // try {
+  //   console.log("Updating airdrop parameters ...")
+  //   await airdrop.updateParams(admin, utils.toWei("1"), "10", {from: admin})
+  //   console.log("Done")
+  // } catch(err) {
+  //   throw new Error(`Update failed: ${err.message}`)
+  // }
 
-//     await faucet.subscribe(admin, {from: admin, value: utils.toWei("0.0001")})
+  // try {
+  //   console.log("Subscribing admin ...")
 
-//     console.log("... Subscribed.")
-//   } catch(err) {
-//     throw new Error(`Subscribing failed: ${err.message}`)
-//   }
+  //   await faucet.subscribe(admin, {from: admin, value: utils.toWei("0.0001")})
+
+  //   console.log("... Subscribed.")
+  // } catch(err) {
+  //   throw new Error(`Subscribing failed: ${err.message}`)
+  // }
+
+  // for(let i = 0; i < 4; i++) {
+  //   let asset = await airdrop.airdropAssets(i)
+  //   console.log(asset)
+  //   console.log(utils.fromWei(await airdrop.balanceRequired(asset)))
+  //   console.log("--------------------")
+  // }
 
   try {
     console.log("Checking claimable by admin ...")
 
-    const claimable = utils.fromWei(await airdrop.getClaimable(admin))
-    // console.log(`Claimable by admin: ${claimable}`)
+    const count = (await airdrop.airdropAssetCount()).toNumber()
+    let asset, claimable
 
-    console.log("Claiming ...")
-    await airdrop.claimAirdrop({from: admin})
+    for(let i = 0; i < count; i++) {
+      asset = await airdrop.airdropAssets(i)
+      console.log(utils.fromWei(await airdrop.getClaimable(admin, asset)))
+      claimable += Number(utils.fromWei(await airdrop.getClaimable(admin, asset)))
+    }
+    
+    console.log(`Claimable by admin: ${claimable}`)
+
+    // console.log("Claiming ...")
+    // await airdrop.claimAirdrop({from: admin})
 
     const freeBal = utils.fromWei(await free.balanceOf(admin))
 

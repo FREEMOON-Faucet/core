@@ -68,7 +68,12 @@ contract Airdrop is AirdropStorage {
     function claimAirdrop() public isNotPaused("claimAirdrop") {
         require(faucet.checkIsSubscribed(msg.sender), "FREEMOON: Only faucet subscribers can claim airdrops.");
         require(previousClaim[msg.sender] + airdropCooldown <= block.timestamp, "FREEMOON: This address has claimed airdrop recently.");
-        uint256 airdropClaimable = getClaimable(msg.sender);
+        
+        uint256 airdropClaimable;
+        for(uint8 i = 0; i < airdropAssetCount; i++) {
+            airdropClaimable += getClaimable(msg.sender, airdropAssets[i]);
+        }
+
         if(airdropClaimable > 0) {
             previousClaim[msg.sender] = block.timestamp;
             free.mint(msg.sender, airdropClaimable);
@@ -112,8 +117,9 @@ contract Airdrop is AirdropStorage {
      * @notice Calculates the amount of FREE currently claimable by an address.
      *
      * @param _by The address being checked.
+     * @param _asset The asset to check.
      */
-    function getClaimable(address _by) public view returns(uint256) {
+    function getClaimable(address _by, address _asset) public view returns(uint256) {
         uint256 freeOwed;
         uint256 bal;
         uint256 netFree;
@@ -122,17 +128,17 @@ contract Airdrop is AirdropStorage {
             return 0;
         }
 
-        for(uint8 i = 0; i < airdropAssetCount; i++) {
-            if(airdropAssets[i] == FSN_ADDRESS) {
-                bal = _by.balance;
-            } else {
-                bal = IERC20(airdropAssets[i]).balanceOf(_by);
-            }
+        if(_asset == address(0)) {
+            bal = _by.balance;
+        } else {
+            bal = IERC20(_asset).balanceOf(_by);
+        }
 
-            if(bal > 0) {
-                netFree = bal / balanceRequired[airdropAssets[i]];
-                freeOwed += netFree * airdropAmount;
-            }
+        if(bal >= balanceRequired[_asset]) {
+            uint256 remainder = bal % balanceRequired[_asset];
+            bal -= remainder;
+            netFree = bal / balanceRequired[_asset];
+            freeOwed = netFree * airdropAmount;
         }
 
         return freeOwed;

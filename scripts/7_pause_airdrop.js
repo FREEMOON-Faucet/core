@@ -1,7 +1,9 @@
 
 const Airdrop = artifacts.require("Airdrop")
 
-const AIRDROP_ADDRESS = ""
+const addresses = require("../addresses")
+
+const AIRDROP_ADDRESS = addresses.mainnet.airdrop
 
 let airdrop
 

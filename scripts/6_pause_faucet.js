@@ -1,7 +1,9 @@
 
 const Faucet = artifacts.require("Faucet")
 
-const FAUCET_ADDRESS = ""
+const addresses = require("../addresses")
+
+const FAUCET_ADDRESS = addresses.mainnet.faucet
 
 let faucet
 
