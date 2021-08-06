@@ -42,6 +42,20 @@ const setMinters = async () => {
   } catch(err) {
     throw new Error(`Failed to set mint invokers in FMN contract: ${err.message}`)
   }
+
+  const _FREE_FAUCET = await free.faucet()
+  const _AIRDROP = await free.airdrop()
+
+  const _FMN_FAUCET = await fmn.faucet()
+
+  console.log(`
+    FREE:
+    - Faucet: ${_FREE_FAUCET}
+    - Airdrop: ${_AIRDROP}
+
+    FMN:
+    - Faucet: ${_FMN_FAUCET}
+  `)
 }
 
 try {

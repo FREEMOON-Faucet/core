@@ -77,6 +77,7 @@ contract Airdrop is AirdropStorage {
         if(airdropClaimable > 0) {
             previousClaim[msg.sender] = block.timestamp;
             free.mint(msg.sender, airdropClaimable);
+            emit Airdrop(msg.sender, airdropClaimable);
         }
     }
     
@@ -128,11 +129,7 @@ contract Airdrop is AirdropStorage {
             return 0;
         }
 
-        // if(_asset == address(0)) {
-        //     bal = _by.balance;
-        // } else {
-            bal = IERC20(_asset).balanceOf(_by);
-        // }
+        bal = IERC20(_asset).balanceOf(_by);
 
         if(bal >= balanceRequired[_asset]) {
             uint256 remainder = bal % balanceRequired[_asset];

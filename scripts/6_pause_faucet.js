@@ -12,7 +12,7 @@ const logDeployed = (msg, addr) => {
   else console.log(`${msg}`)
 }
 
-const newPauseStatus = true // TRUE => PAUSE, FALSE => UNPAUSE SPECIFIED FUNCTIONS
+const newPauseStatus = false // TRUE => PAUSE, FALSE => UNPAUSE SPECIFIED FUNCTIONS
 
 const functionNames = [ // FUNCTIONS TO PAUSE/UNPAUSE
   "subscribe",

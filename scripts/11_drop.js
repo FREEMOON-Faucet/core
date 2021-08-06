@@ -11,13 +11,13 @@ let airdrop
 let free, chng, any, fsnFuse
 let faucet
 
-const AIRDROP_ADDRESS = addresses.testnet.airdrop
-const FREE_ADDRESS = addresses.testnet.free
-const FAUCET_ADDRESS = addresses.testnet.faucet
+const AIRDROP_ADDRESS = addresses.mainnet.airdrop
+const FREE_ADDRESS = addresses.mainnet.free
+const FAUCET_ADDRESS = addresses.mainnet.faucet
 
-const CHNG_ADDRESS = "0xf7eD89b804CC22Cb188986Eeb6D5F01d522d5138"
-const ANY_ADDRESS = "0x8B0Cb6c96522a5e27466808D6992838044ae7192"
-const FSN_FUSE_ADDRESS = "0x2ac2055cea2FDc44850F7fE52EAFD18e64a77984"
+const CHNG_ADDRESS = addresses.mainnet.chng
+const ANY_ADDRESS = addresses.mainnet.any
+const FSN_FUSE_ADDRESS = addresses.mainnet.fsnFuse
 
 // const transfer = async () => {
 //   await web3.eth.sendTransaction({from: admin, to: user, value: utils.toWei("1")})
@@ -62,31 +62,31 @@ const drop = async () => {
   //   console.log("--------------------")
   // }
 
-  try {
-    console.log("Checking claimable by admin ...")
+  // try {
+  //   console.log("Checking claimable by admin ...")
 
-    const count = (await airdrop.airdropAssetCount()).toNumber()
-    let asset, claimableFor
-    let claimable = 0
+  //   const count = (await airdrop.airdropAssetCount()).toNumber()
+  //   let asset, claimableFor
+  //   let claimable = 0
 
-    for(let i = 0; i < count; i++) {
-      asset = await airdrop.airdropAssets(i)
-      claimableFor = Number(utils.fromWei(await airdrop.getClaimable(admin, asset)))
-      console.log(claimableFor)
-      claimable += claimableFor
-    }
+  //   for(let i = 0; i < count; i++) {
+  //     asset = await airdrop.airdropAssets(i)
+  //     claimableFor = Number(utils.fromWei(await airdrop.getClaimable(admin, asset)))
+  //     console.log(claimableFor)
+  //     claimable += claimableFor
+  //   }
     
-    console.log(`Claimable by admin: ${claimable}`)
+  //   console.log(`Claimable by admin: ${claimable}`)
 
-    console.log("Claiming ...")
-    await airdrop.claimAirdrop({from: admin})
+  //   console.log("Claiming ...")
+  //   await airdrop.claimAirdrop({from: admin})
 
-    const freeBal = utils.fromWei(await free.balanceOf(admin))
+  //   const freeBal = utils.fromWei(await free.balanceOf(admin))
 
-    console.log(`Done, FREE balance: ${freeBal}`)
-  } catch(err) {
-    throw new Error(`Claim failed: ${err.message}`)
-  }
+  //   console.log(`Done, FREE balance: ${freeBal}`)
+  // } catch(err) {
+  //   throw new Error(`Claim failed: ${err.message}`)
+  // }
 }
 
 try {
