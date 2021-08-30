@@ -62,6 +62,23 @@ contract Airdrop is AirdropStorage {
     }
 
     /**
+     * @notice Removes an asset from the list of eligible airdrop assets.
+     *
+     * @param _asset The address of the asset to remove.
+     */
+    function removeAsset(address _asset) public {
+        require(msg.sender == governance, "FREEMOON: Only the governance address can remove assets.");
+
+        for(uint8 i = 0; i < airdropAssetCount; i++) {
+            if(_asset == airdropAssets[i]) {
+                delete airdropAssets[i];
+                airdropAssetCount--;
+                break;
+            }
+        }
+    }
+
+    /**
      * @notice Subscribed addresses can claim their airdrop once every set cooldown time.
      * @notice The amount is based on their balance of eligible assets.
      */

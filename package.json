@@ -13,7 +13,7 @@
     "pause-faucet": "npx hardhat run scripts/6_pause_faucet.js --network fsnMainnet",
     "pause-airdrop": "npx hardhat run scripts/7_pause_airdrop.js --network fsnMainnet",
     "upgrade-faucet": "npx hardhat run scripts/8_upgrade_faucet.js --network fsnTestnet",
-    "upgrade-airdrop": "npx hardhat run scripts/9_upgrade_airdrop.js --network fsnTestnet",
+    "upgrade-airdrop": "npx hardhat run scripts/9_upgrade_airdrop.js --network fsnMainnet",
     "drop": "npx hardhat run scripts/11_drop.js --network fsnMainnet"
   },
   "repository": {

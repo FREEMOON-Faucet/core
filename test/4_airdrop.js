@@ -245,6 +245,11 @@ contract("Airdrop Contract", async () => {
     }
   })
 
+  it("Should remove an airdrop asset successfully", async () => {
+    await setAssets()
+    await truffleAssert.passes(airdrop.removeAsset(assets[0], {from: governance}))
+  })
+
   it("Should not add an asset if the balance required value is zero", async () => {
     let mockAssetAddress = "0x1234567890abcdef1234567890abcdef12345678"
     let { assets, balancesRequired } = initialAssets()
@@ -289,6 +294,23 @@ contract("Airdrop Contract", async () => {
       truffleAssert.passes(airdrop.updateParams(user, utils.toWei("2"), "3600", {from: user})),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: Only the governance address can perform this operation."
+    )
+  })
+
+  it("Should allow governance address to remove an asset anytime and decrement length", async () => {
+    await setAssets()
+    const lengthBefore = (await airdrop.airdropAssetCount()).toNumber()
+    await truffleAssert.passes(airdrop.removeAsset(chng.address, {from: governance}))
+    const lengthAfter = (await airdrop.airdropAssetCount()).toNumber()
+    expect(lengthAfter).to.equal(lengthBefore - 1)
+  })
+
+  it("Should not allow non-governance address to remove assets", async () => {
+    await setAssets()
+    await truffleAssert.fails(
+      airdrop.removeAsset(chng.address, {from: user}),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Only the governance address can remove assets."
     )
   })
 

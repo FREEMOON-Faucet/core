@@ -4,7 +4,7 @@ const AirdropLayout = artifacts.require("Airdrop")
 
 const addresses = require("../addresses")
 
-const AIRDROP_ADDRESS = addresses.testnet.airdrop
+const AIRDROP_ADDRESS = addresses.mainnet.airdrop
 
 let admin
 let airdropLayout, airdropProxy
@@ -16,7 +16,7 @@ const logDeployed = (msg, addr) => {
 
 const upgradeAirdrop = async () => {
   [ admin ] = await web3.eth.getAccounts()
-  airdropProxy = await AirdropProxy.at(AIRDROP_ADDRESS, {from: admin})
+  airdropProxy = await AirdropProxy.at(AIRDROP_ADDRESS)
 
   try {
     logDeployed("Deploying new airdrop functional contract ...")
