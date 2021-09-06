@@ -50,6 +50,29 @@ module.exports = {
             }
           }
         } 
+      },
+      {
+        version: "0.5.16",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          },
+          evmVersion: "byzantium",
+          outputSelection: {
+            "*": {
+              "*": [
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object",
+                "abi",
+                "evm.bytecode.sourceMap",
+                "evm.deployedBytecode.sourceMap",
+                "metadata"
+              ],
+              "": ["ast"]
+            }
+          }
+        }
       }
     ]
   },

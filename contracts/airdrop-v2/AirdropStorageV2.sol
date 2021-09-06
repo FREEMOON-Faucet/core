@@ -12,32 +12,46 @@ contract AirdropStorageV2 {
     IFREE free;
     IFaucet faucet;
 
+    // EOA's
     address public admin;
     address public coordinator;
     address public governance;
 
-    bool initialized;
-    bool paramsInitialized;
+    // Initialized values
+    bool initialized; // Constructor
+    bool paramsInitialized; // Airdrop amount, airdrop cooldown
 
-    bool airdropAssetsInitialized;
-    bool mintingAssetsInitialized;
-    bool symbolsInitialized;
+    bool airdropAssetsInitialized; // Airdrop assets (non FRC758)
+    bool mintingAssetsInitialized; // Minting assets (FRC758)
+    bool symbolsInitialized; // Token symbols
+    bool termsInitialized; // Three time lengths
 
     // Configurable parameters
     uint256 public airdropAmount;
     uint256 public airdropCooldown;
 
+    // Tally on number of assets within each feature
     uint8 public airdropAssetCount;
     uint8 public mintingAssetCount;
 
+    // Lists of airdrop assets and minting assets
     address[] public airdropAssets;
     address[] public mintingAssets;
 
     mapping(string => bool) public isPaused;
 
+    // The numbers associated with each feature, usually inverse of one another
     mapping(address => uint256) public balanceRequired;
     mapping(address => uint256) public dailyMintReward;
+
+    // The current end date for the timeframe specified.
+    mapping(Timeframe => uint256) public termEnd;
+
+    // The balance locked in this position.
+    mapping(bytes32 => uint256) public positionBalance;
+
     mapping(address => string) public assetSymbol;
+
     mapping(address => uint256) public previousClaim;
 
     mapping(string => uint256) public _uintStorage;
@@ -45,10 +59,11 @@ contract AirdropStorageV2 {
     mapping(string => bool) public _boolStorage;
     mapping(string => bytes32) public _bytes32Storage;
 
-    enum AssetList {
-        AirdropAsset,
-        MintingAsset,
-        Both
+
+    enum Timeframe {
+        Short,
+        Medium,
+        Long
     }
     
 

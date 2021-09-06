@@ -47,8 +47,11 @@ contract AirdropV2 is AirdropStorageV2 {
      * @param _balances The balances of these tokens required to receive the FREE airdrop.
      */
     function setAirdropAssets(address[] memory _assets, uint256[] memory _balances) public {
-        require(msg.sender == governance || (msg.sender == admin && !airdropAssetsInitialized), "FREEMOON: Only the governance address can set assets after initialization.");
-          
+        require(
+          msg.sender == governance || (msg.sender == admin && !airdropAssetsInitialized),
+          "FREEMOON: Only the governance address can set assets after initialization."
+        );
+
         for(uint8 i = 0; i < _assets.length; i++) {
             require(_balances[i] != 0, "FREEMOON: Cannot set balance required for an asset to zero.");
             if(balanceRequired[_assets[i]] == 0) {
@@ -61,10 +64,19 @@ contract AirdropV2 is AirdropStorageV2 {
         airdropAssetsInitialized = true;
     }
 
+    /**
+     * @notice Adds new assets eligible for FREE minting, or changes existing ones.
+     *
+     * @param _assets The addresses of the tokens to be added as eligible.
+     * @param _rewards The daily mintable FREE for these tokens.
+     */
     function setMintingAssets(address[] memory _assets, uint256[] memory _rewards) public {
-        require(msg.sender == governance || (msg.sender == admin && !mintingAssetsInitialized), "FREEMOON: Only the governance address can set assets after initialization.");
+        require(
+          msg.sender == governance || (msg.sender == admin && !mintingAssetsInitialized),
+          "FREEMOON: Only the governance address can set assets after initialization."
+        );
 
-        for(uint i = 0; i < _assets.length; i++) {
+        for(uint8 i = 0; i < _assets.length; i++) {
             require(_rewards[i] != 0, "FREEMOON: Cannot set daily mint reward for an asset to zero.");
             if(dailyMintReward[_assets[i]] == 0) {
                 mintingAssetCount++;
@@ -83,7 +95,10 @@ contract AirdropV2 is AirdropStorageV2 {
      * @param _symbols The symbols of these tokens to be updated.
      */
     function setSymbols(address[] memory _assets, string[] memory _symbols) public {
-        require(msg.sender == governance || (msg.sender == admin && !symbolsInitialized), "FREEMOON: Only the governance address can set symbols after initialization.");
+        require(
+          msg.sender == governance || (msg.sender == admin && !symbolsInitialized), 
+          "FREEMOON: Only the governance address can set symbols after initialization."
+        );
 
         for(uint8 i = 0; i < _assets.length; i++) {
             assetSymbol[_assets[i]] = _symbols[i];
@@ -119,7 +134,13 @@ contract AirdropV2 is AirdropStorageV2 {
     function resetAirdropList(address[] memory _resetList) public {
         require(msg.sender == admin, "Only admin");
         airdropAssets = _resetList;
-        airdropAssetCount = uint8(airdropAssets.length);
+        airdropAssetCount = uint8(_resetList.length);
+    }
+
+    function resetMintingList(address[] memory _resetList) public {
+        require(msg.sender == admin, "Only admin.");
+        mintingAssets = _resetList;
+        mintingAssetCount = uint8(_resetList.length);
     }
 
     /**
@@ -141,6 +162,18 @@ contract AirdropV2 is AirdropStorageV2 {
             emit Airdrop(msg.sender, airdropClaimable);
         }
     }
+
+    function mint(address _asset, uint256 _amount, Timeframe timeframe) public {
+        require(dailyMintReward[_asset] > 0, "FREEMOON: This token is not an accepted FREE minter.");
+        require(termEnd[timeframe] > 0, "FREEMOON: This term is not yet valid.");
+        require(termEnd[timeframe] - block.timestamp > 86400, "Cannot time slice for less than one day.");
+
+        bytes32 positionId = getPositionId(msg.sender, _asset, termEnd[timeframe]);
+
+        positionBalance[positionId] += _amount;
+
+        IFRC758(_asset).timeSliceTransferFrom(msg.sender, address(this), _amount, block.timestamp, termEnd[timeframe]);
+    }
     
     /**
      * @notice Update the parameters around which the faucet operates. Only possible from governance vote.
@@ -156,6 +189,19 @@ contract AirdropV2 is AirdropStorageV2 {
         airdropCooldown = _airdropCooldown;
 
         paramsInitialized = true;
+    }
+
+    function updateTerms(uint256 _shortTerm, uint256 _mediumTerm, uint256 _longTerm) public {
+        require(
+            msg.sender == governance || (msg.sender == admin && !termsInitialized),
+            "FREEMOON: Only the governance address can set symbols after initialization."
+        );
+
+        termEnd[Timeframe.Short] = _shortTerm;
+        termEnd[Timeframe.Medium] = _mediumTerm;
+        termEnd[Timeframe.Long] = _longTerm;
+
+        termsInitialized = true;
     }
 
     /**
@@ -200,5 +246,9 @@ contract AirdropV2 is AirdropStorageV2 {
         }
 
         return freeOwed;
+    }
+
+    function getPositionId(address _owner, address _asset, uint256 _termEnd) public pure returns(bytes32) {
+        return bytes32(abi.encodePacked(_owner, _asset, _termEnd));
     }
 }
