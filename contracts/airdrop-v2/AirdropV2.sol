@@ -55,7 +55,6 @@ contract AirdropV2 is AirdropStorageV2 {
         for(uint8 i = 0; i < _assets.length; i++) {
             require(_balances[i] != 0, "FREEMOON: Cannot set balance required for an asset to zero.");
             if(balanceRequired[_assets[i]] == 0) {
-                airdropAssetCount++;
                 airdropAssets.push(_assets[i]);
             }
             balanceRequired[_assets[i]] = _balances[i];
@@ -79,7 +78,6 @@ contract AirdropV2 is AirdropStorageV2 {
         for(uint8 i = 0; i < _assets.length; i++) {
             require(_rewards[i] != 0, "FREEMOON: Cannot set daily mint reward for an asset to zero.");
             if(dailyMintReward[_assets[i]] == 0) {
-                mintingAssetCount++;
                 mintingAssets.push(_assets[i]);
             }
             dailyMintReward[_assets[i]] = _rewards[i];
@@ -115,32 +113,31 @@ contract AirdropV2 is AirdropStorageV2 {
     function removeAsset(address _asset) public {
         require(msg.sender == governance, "FREEMOON: Only the governance address can remove assets.");
 
-        for(uint8 i = 0; i < airdropAssetCount; i++) {
+        for(uint8 i = 0; i < airdropAssets.length; i++) {
             if(_asset == airdropAssets[i]) {
-                airdropAssets[i] = airdropAssets[airdropAssetCount - 1];
+                airdropAssets[i] = airdropAssets[airdropAssets.length - 1];
                 airdropAssets.pop();
-                airdropAssetCount = uint8(airdropAssets.length);
                 break;
             }
-            if(_asset == mintingAssets[i]) {
-              mintingAssets[i] = mintingAssets[mintingAssetCount - 1];
+        }
+
+        for(uint8 i = 0; i < mintingAssets.length; i++) {
+          if(_asset == mintingAssets[i]) {
+              mintingAssets[i] = mintingAssets[mintingAssets.length - 1];
               mintingAssets.pop();
-              mintingAssetCount = uint8(mintingAssets.length);
               break;
             }
         }
     }
 
     function resetAirdropList(address[] memory _resetList) public {
-        require(msg.sender == admin, "Only admin");
+        require(msg.sender == admin, "Only admin.");
         airdropAssets = _resetList;
-        airdropAssetCount = uint8(_resetList.length);
     }
 
     function resetMintingList(address[] memory _resetList) public {
         require(msg.sender == admin, "Only admin.");
         mintingAssets = _resetList;
-        mintingAssetCount = uint8(_resetList.length);
     }
 
     /**
@@ -152,7 +149,7 @@ contract AirdropV2 is AirdropStorageV2 {
         require(previousClaim[msg.sender] + airdropCooldown <= block.timestamp, "FREEMOON: This address has claimed airdrop recently.");
         
         uint256 airdropClaimable;
-        for(uint8 i = 0; i < airdropAssetCount; i++) {
+        for(uint8 i = 0; i < airdropAssets.length; i++) {
             airdropClaimable += getClaimable(msg.sender, airdropAssets[i]);
         }
 
@@ -163,16 +160,41 @@ contract AirdropV2 is AirdropStorageV2 {
         }
     }
 
-    function mint(address _asset, uint256 _amount, Timeframe timeframe) public {
+    /**
+     * @notice Holders of FRC758 tokens can timelock them in exchange for FREE.
+     * @notice The mintable FREE is determined by: (number of locked tokens) * (number of days locked).
+     *
+     * @param _asset The address of the FRC758 token to timelock.
+     * @param _amount The amount of this token to timelock.
+     * @param _timeframe The term to lock their tokens for. Can be short (< 4 months), medium (< 8 months) or long (< 12 months).
+     */
+    function mint(address _asset, uint256 _amount, Timeframe _timeframe) public {
         require(dailyMintReward[_asset] > 0, "FREEMOON: This token is not an accepted FREE minter.");
-        require(termEnd[timeframe] > 0, "FREEMOON: This term is not yet valid.");
-        require(termEnd[timeframe] - block.timestamp > 86400, "Cannot time slice for less than one day.");
+        require(termEnd[_timeframe] > 0, "FREEMOON: This term is not yet valid.");
+        require(termEnd[_timeframe] - block.timestamp > 86400, "Cannot time slice for less than one day.");
 
-        bytes32 positionId = getPositionId(msg.sender, _asset, termEnd[timeframe]);
+        bytes32 positionId = getPositionId(msg.sender, _asset, termEnd[_timeframe]);
 
         positionBalance[positionId] += _amount;
 
-        IFRC758(_asset).timeSliceTransferFrom(msg.sender, address(this), _amount, block.timestamp, termEnd[timeframe]);
+        IFRC758(_asset).timeSliceTransferFrom(msg.sender, address(this), _amount, block.timestamp, termEnd[_timeframe]);
+    }
+
+    /**
+     * @notice Once a position is created with an FRC758 token, an amount locked, and an end date decided, these tokens can also be unlocked.
+     * @notice The price of unlocking these tokens is in FMN, equivalent to the value of the position in FREE.
+     *
+     * @param _asset The address of the FRC758 token to unlock.
+     * @param _amount The amount of this token to unlock.
+     * @param _timeframe The term of the position to unlock tokens from. The term may have since been moved to a different category, i.e. Short, Medium, or Long.
+     */
+    function unlock(address _asset, uint256 _amount, Timeframe _timeframe) public {
+        bytes32 positionId = getPositionId(msg.sender, _asset, termEnd[_timeframe]);
+        require(_amount <= positionBalance[positionId], "FREEMOON: This amount of tokens is not locked in this position.");
+
+        positionBalance[positionId] -= _amount;
+
+        IFRC758(_asset).timeSliceTransferFrom(address(this), msg.sender, _amount, block.timestamp, termEnd[_timeframe]);
     }
     
     /**
@@ -191,17 +213,17 @@ contract AirdropV2 is AirdropStorageV2 {
         paramsInitialized = true;
     }
 
-    function updateTerms(uint256 _shortTerm, uint256 _mediumTerm, uint256 _longTerm) public {
-        require(
-            msg.sender == governance || (msg.sender == admin && !termsInitialized),
-            "FREEMOON: Only the governance address can set symbols after initialization."
-        );
-
-        termEnd[Timeframe.Short] = _shortTerm;
-        termEnd[Timeframe.Medium] = _mediumTerm;
-        termEnd[Timeframe.Long] = _longTerm;
-
-        termsInitialized = true;
+    /**
+     * @notice Governance can introduce a new timeframe for minting, that ends one year from the time of introduction.
+     *
+     * @param _timestamp The timestamp of the end of the new Long term.
+     */
+    function newTerm(uint256 _timestamp) public {
+        require(msg.sender == governance, "FREEMOON: Only governance can set new terms.");
+        
+        termEnd[Timeframe.Short] = termEnd[Timeframe.Medium];
+        termEnd[Timeframe.Medium] = termEnd[Timeframe.Long];
+        termEnd[Timeframe.Long] = block.timestamp + _timestamp;
     }
 
     /**
@@ -250,5 +272,13 @@ contract AirdropV2 is AirdropStorageV2 {
 
     function getPositionId(address _owner, address _asset, uint256 _termEnd) public pure returns(bytes32) {
         return bytes32(abi.encodePacked(_owner, _asset, _termEnd));
+    }
+
+    function airdropAssetCount() public view returns(uint256) {
+        return airdropAssets.length;
+    }
+
+    function mintingAssetCount() public view returns(uint256) {
+        return mintingAssets.length;
     }
 }

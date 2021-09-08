@@ -24,15 +24,10 @@ contract AirdropStorageV2 {
     bool airdropAssetsInitialized; // Airdrop assets (non FRC758)
     bool mintingAssetsInitialized; // Minting assets (FRC758)
     bool symbolsInitialized; // Token symbols
-    bool termsInitialized; // Three time lengths
 
     // Configurable parameters
     uint256 public airdropAmount;
     uint256 public airdropCooldown;
-
-    // Tally on number of assets within each feature
-    uint8 public airdropAssetCount;
-    uint8 public mintingAssetCount;
 
     // Lists of airdrop assets and minting assets
     address[] public airdropAssets;
@@ -59,13 +54,11 @@ contract AirdropStorageV2 {
     mapping(string => bool) public _boolStorage;
     mapping(string => bytes32) public _bytes32Storage;
 
-
     enum Timeframe {
         Short,
         Medium,
         Long
     }
-    
 
     /**
      * @notice Emitted when someone claims their owed FREE airdrop.
