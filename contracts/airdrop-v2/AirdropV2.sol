@@ -11,14 +11,14 @@ contract AirdropV2 is AirdropStorageV2 {
         _;
     }
 
-    function initialize(address _admin, address _governance, address _faucet, address _free, address _fmn, address _pair) public {
+    function initialize(address _admin, address _governance, address _faucet, address _free, address _fmn, address _pool) public {
         require(!initialized, "FREEMOON: Airdrop contract can only be initialized once.");
         admin = _admin;
         governance = _governance;
         faucet = IFaucet(_faucet);
         free = IFREE(_free);
         fmn = IFMN(_fmn);
-        pool = IChaingeDexPair(_pair);
+        pool = IChaingeDexPair(_pool);
         initialized = true;
     }
 
@@ -134,9 +134,8 @@ contract AirdropV2 is AirdropStorageV2 {
 
         positionBalance[positionId] += _amount;
 
-        free.mint(msg.sender, rewards);
-
         IFRC758(_asset).timeSliceTransferFrom(msg.sender, address(this), _amount, block.timestamp, termEnd[_timeframe]);
+        free.mint(msg.sender, rewards);
     }
 
     function unlock(address _asset, uint256 _amount, Timeframe _timeframe) public isNotPaused("unlock") {
@@ -144,10 +143,10 @@ contract AirdropV2 is AirdropStorageV2 {
         require(_amount <= positionBalance[positionId], "FREEMOON: This amount of tokens is not locked in this position.");
 
         uint256 rewards = getMintRewards(_asset, _amount, termEnd[_timeframe]);
-        uint256 cost = freeToFmn(rewards);
+        uint256 unlockCost = freeToFmn(rewards);
 
         positionBalance[positionId] -= _amount;
-
+        fmn.transferFrom(msg.sender, governance, unlockCost);
         IFRC758(_asset).timeSliceTransferFrom(address(this), msg.sender, _amount, block.timestamp, termEnd[_timeframe]);
     }
 
@@ -179,12 +178,14 @@ contract AirdropV2 is AirdropStorageV2 {
         return _amount * time * mintRewardPerSec[_asset];
     }
 
-    function freeToFmn() public view returns(uint256) {
-        uint256 
+    function freeToFmn(uint256 _freeAmount) public view returns(uint256) {
+        (uint112 _reserve0, uint112 _reserve1, uint32 _ts) = pool.getReserves();
+        uint256 _fmnPerFree = _reserve1 / _reserve0;
+        return _freeAmount * _fmnPerFree;
     }
 
     function getPositionId(address _owner, address _asset, uint256 _termEnd) public pure returns(bytes32) {
-        return bytes32(abi.encodePacked(_owner, _asset, _termEnd));
+        return bytes32(keccak256(abi.encodePacked(_owner, _asset, _termEnd)));
     }
 
     function farmingAssetCount() public view returns(uint256) {

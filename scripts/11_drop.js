@@ -32,7 +32,7 @@ const drop = async () => {
     let reserve1 = web3.utils.fromWei(_reserve1)
     let timestamp = _blockTimestampLast.toNumber()
 
-    console.log(`reserve 0: ${ reserve0 }, reserve1: ${ reserve1 }, timestamp: ${ timestamp }`)
+    console.log(`reserve 0: ${ reserve0 }, reserve1: ${ reserve1 }, timestamp: ${ (new Date(timestamp * 1000)).toISOString() }`)
   } catch(err) {
     console.log(`Error: ${ err.message }`)
   }

@@ -11,14 +11,16 @@ const AirdropV2 = artifacts.require("AirdropV2")
 const AirdropProxyV2 = artifacts.require("AirdropProxyV2")
 
 const MockFRC758 = artifacts.require("MockFRC758")
+const ChaingeDexPair = artifacts.require("ChaingeDexPair")
 
 const utils = require("../scripts/99_utils")
 
-const { airdropConfig, mintingConfig } = require("../rewardAssets")
+const { farmingConfig, mintingConfig } = require("../rewardAssets")
 
 let admin, coordinator, governance
 let faucetLayout, faucetProxy, faucet
 let airdropV2Layout, airdropProxyV2, airdropV2
+let pool
 let free, fmn
 let chng
 let categories, odds
@@ -55,18 +57,36 @@ const config = () => {
     hotWalletLimit: utils.toWei("10"), // 10 FSN max wallet balance
     categories: categories.map(cat => utils.toWei(cat)), // balances required for each FREEMOON lottery category
     odds: odds, // odds of winning for each category
-    airdropAmount: utils.toWei("1"), // 1 FREE paid per airdrop valid asset balance
-    airdropCooldown: "86400" // 1 day between airdrops
   }
 }
 
 const initialAssets = () => {
+  let farmingAssets = []
+  let farmingSymbols = []
+  let farmingRewards = []
+
+  for(let i = 0; i < farmingConfig; i++) {
+    farmingAssets.push(farmingConfig[i].address)
+    farmingSymbols.push(farmingConfig[i].symbol)
+    farmingRewards.push(utils.toWei(farmingConfig[i].farmRewardPerSec, "ether"))
+  }
+
+  let mintingAssets = []
+  let mintingSymbols = []
+  let mintingRewards = []
+
+  for(let j = 0; j < mintingConfig; j++) {
+    mintingAssets.push(mintingConfig[i].address)
+    mintingSymbols.push(mintingConfig[i].symbol)
+    mintingRewards.push(utils.toWei(mintingConfig[i].mintRewardPerSec, "ether"))
+  }
 
   return {
-    airdropAssets,
+    farmingAssets,
+    farmingRewards,
     mintingAssets,
-    balancesRequired: balancesRequired.map(bal => utils.toWei(bal)),
-    dailyMintingRewards: dailyMintRewards.map(dmr => utils.toWei(dmr))
+    mintingRewards,
+    symbols: farmingSymbols.concat(mintingSymbols)
   }
 }
 
@@ -79,10 +99,10 @@ const setUp = async () => {
     payoutAmount,
     hotWalletLimit,
     categories,
-    odds,
-    airdropAmount,
-    airdropCooldown
+    odds
   } = config()
+
+  pool = await ChaingeDexPair.new()
 
   free = await Free.new(
     "The FREE Token",
@@ -136,13 +156,8 @@ const setUp = async () => {
     governance,
     faucet.address,
     free.address,
-    { from: admin }
-  )
-
-  await airdropV2.updateParams(
-    admin,
-    airdropAmount,
-    airdropCooldown,
+    fmn.address,
+    pool.address,
     { from: admin }
   )
 
@@ -155,6 +170,17 @@ const setUp = async () => {
     utils.toWei("10000000"),
     { from: admin }
   )
+}
+
+const setAssets = async () => {
+  const { farm, mint } = initialAssets()
+  const { farmingAssets, farmingSymbols, farmingRewards } = farm
+  const { mintingAssets, mintingSymbols, mintingRewards } = mint
+
+  await airdropV2.setFarmingAssets(farmingAssets, farmingRewards, { from: admin })
+  await airdropV2.setMintingAssets(mintingAssets, mintingRewards, { from: admin })
+
+  await airdropV2.setSymbols(farmingAssets.concat(mintingAssets), farmingSymbols.concat(mintingSymbols), { from: admin })
 }
 
 const setTimes = async () => {
@@ -182,18 +208,6 @@ const advanceBlockAtTime = async time => {
   newTime = newBlock.timestamp
 }
 
-const setAirdropAssets = async () => {
-  const {
-    airdropAssets,
-    mintingAssets,
-    balancesRequired,
-    dailyMintRewards
-  } = initialAssets()
-
-  await airdropV2.setAirdropAssets(airdropAssets, balancesRequired, { from: admin })
-  await airdropV2.setMintingAssets(mintingAssets, dailyMintRewards, { from: admin })
-}
-
 
 contract("AirdropV2 Contract", async () => {
   beforeEach("Re-deploy all, set start time", async () => {
@@ -210,23 +224,21 @@ contract("AirdropV2 Contract", async () => {
     expect(governanceSet).to.equal(governance)
   })
 
-  // it("Should set correct initial airdrop parameters")
-
-  it("Should initialize airdrop assets successfully", async () => {
-    const { airdropAssets, balancesRequired } = initialAssets()
-    await airdropV2.setAirdropAssets(airdropAssets, balancesRequired, { from: admin })
-    for(let i = 0; i < airdropAssets.length; i++) {
-      let balanceRequirementSet = await airdropV2.balanceRequired(airdropAssets[i])
-      expect(utils.fromWei(balanceRequirementSet)).to.equal(utils.fromWei(balancesRequired[i]))
+  it("Should initialize farm assets successfully", async () => {
+    const { farmingAssets, farmingRewards } = initialAssets()
+    await airdropV2.setFarmingAssets(farmingAssets, farmingRewards, { from: admin })
+    for(let i = 0; i < farmingAssets.length; i++) {
+      let rewardSet = await airdropV2.farmRewardPerSec(airdropAssets[i])
+      expect(utils.fromWei(rewardSet)).to.equal(utils.fromWei(farmingRewards[i]))
     }
   })
 
   it("Should initialize minting assets successfully", async () => {
-    const { mintingAssets, dailyMintRewards } = initialAssets()
-    await airdropV2.setMintingAssets(mintingAssets, dailyMintRewards, { from: admin })
+    const { mintingAssets, mintingRewards } = initialAssets()
+    await airdropV2.setMintingAssets(mintingAssets, mintingRewards, { from: admin })
     for(let i = 0; i < mintingAssets.length; i++) {
-      let rewardSet = await airdropV2.dailyMintReward(mintingAssets[i])
-      expect(utils.fromWei(rewardSet)).to.equal(utils.fromWei(dailyMintRewards[i]))
+      let rewardSet = await airdropV2.mintRewardPerSec(mintingAssets[i])
+      expect(utils.fromWei(rewardSet)).to.equal(utils.fromWei(mintRewards[i]))
     }
   })
 
