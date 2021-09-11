@@ -11,13 +11,14 @@ contract AirdropV2 is AirdropStorageV2 {
         _;
     }
 
-    function initialize(address _admin, address _governance, address _faucet, address _free, address _fmn) public {
+    function initialize(address _admin, address _governance, address _faucet, address _free, address _fmn, address _pair) public {
         require(!initialized, "FREEMOON: Airdrop contract can only be initialized once.");
         admin = _admin;
         governance = _governance;
         faucet = IFaucet(_faucet);
         free = IFREE(_free);
         fmn = IFMN(_fmn);
+        pool = IChaingeDexPair(_pair);
         initialized = true;
     }
 
@@ -118,19 +119,22 @@ contract AirdropV2 is AirdropStorageV2 {
     function harvest(address _asset) public isNotPaused("harvest") {
         uint256 earned = getFarmRewards(msg.sender, _asset);
         if(earned > 0) {
-            timeStaked[msg.sender][_asset] = 0;
+            sinceLastModification[msg.sender][_asset] = 0;
             free.mint(msg.sender, earned);
         }
     }
 
-    function mint(address _asset, uint256 _amount, Timeframe _timeframe) public isNotPaused("mint") {
+    function lock(address _asset, uint256 _amount, Timeframe _timeframe) public isNotPaused("mint") {
         require(mintRewardPerSec[_asset] > 0, "FREEMOON: This token is not an accepted FREE minter.");
         require(termEnd[_timeframe] > 0, "FREEMOON: This term is not yet valid.");
         require(termEnd[_timeframe] - block.timestamp > 86400, "Cannot time slice for less than one day.");
 
         bytes32 positionId = getPositionId(msg.sender, _asset, termEnd[_timeframe]);
+        uint256 rewards = getMintRewards(_asset, _amount, termEnd[_timeframe]);
 
         positionBalance[positionId] += _amount;
+
+        free.mint(msg.sender, rewards);
 
         IFRC758(_asset).timeSliceTransferFrom(msg.sender, address(this), _amount, block.timestamp, termEnd[_timeframe]);
     }
@@ -138,6 +142,9 @@ contract AirdropV2 is AirdropStorageV2 {
     function unlock(address _asset, uint256 _amount, Timeframe _timeframe) public isNotPaused("unlock") {
         bytes32 positionId = getPositionId(msg.sender, _asset, termEnd[_timeframe]);
         require(_amount <= positionBalance[positionId], "FREEMOON: This amount of tokens is not locked in this position.");
+
+        uint256 rewards = getMintRewards(_asset, _amount, termEnd[_timeframe]);
+        uint256 cost = freeToFmn(rewards);
 
         positionBalance[positionId] -= _amount;
 
@@ -164,12 +171,16 @@ contract AirdropV2 is AirdropStorageV2 {
     }
 
     function getFarmRewards(address _account, address _asset) public view returns(uint256) {
-        return farmBalance[_account][_asset] * timeStaked[_account][_asset] * farmRewardPerSec[_asset];
+        return farmBalance[_account][_asset] * sinceLastModification[_account][_asset] * farmRewardPerSec[_asset];
     }
 
     function getMintRewards(address _asset, uint256 _amount, uint256 _timestamp) public view returns(uint256) {
         uint256 time = _timestamp - block.timestamp;
         return _amount * time * mintRewardPerSec[_asset];
+    }
+
+    function freeToFmn() public view returns(uint256) {
+        uint256 
     }
 
     function getPositionId(address _owner, address _asset, uint256 _termEnd) public pure returns(bytes32) {

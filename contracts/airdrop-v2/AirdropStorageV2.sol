@@ -5,14 +5,16 @@ import "../interfaces/IFREE.sol";
 import "../interfaces/IFMN.sol";
 import "../interfaces/IFaucet.sol";
 import "../FRC758/interfaces/IFRC758.sol";
+import "../interfaces/IChaingeDexPair.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 contract AirdropStorageV2 {
 
+    IFaucet faucet;
     IFREE free;
     IFMN fmn;
-    IFaucet faucet;
+    IChaingeDexPair pool;
 
     // EOA's
     address public admin;
@@ -45,7 +47,7 @@ contract AirdropStorageV2 {
     // Account => Token => Balance.
     mapping(address => mapping(address => uint256)) public farmBalance;
     // Account => Token => Time Staked.
-    mapping(address => mapping(address => uint256)) public timeStaked;
+    mapping(address => mapping(address => uint256)) public sinceLastModification;
 
     mapping(address => string) public assetSymbol;
 
