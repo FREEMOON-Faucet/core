@@ -2,6 +2,7 @@
 pragma solidity 0.8.5;
 
 import "../interfaces/IFREE.sol";
+import "../interfaces/IFMN.sol";
 import "../interfaces/IFaucet.sol";
 import "../FRC758/interfaces/IFRC758.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -10,6 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract AirdropStorageV2 {
 
     IFREE free;
+    IFMN fmn;
     IFaucet faucet;
 
     // EOA's
@@ -19,25 +21,20 @@ contract AirdropStorageV2 {
 
     // Initialized values
     bool initialized; // Constructor
-    bool paramsInitialized; // Airdrop amount, airdrop cooldown
 
-    bool airdropAssetsInitialized; // Airdrop assets (non FRC758)
+    bool farmingAssetsInitialized; // Farm assets (non FRC758)
     bool mintingAssetsInitialized; // Minting assets (FRC758)
     bool symbolsInitialized; // Token symbols
 
-    // Configurable parameters
-    uint256 public airdropAmount;
-    uint256 public airdropCooldown;
-
     // Lists of airdrop assets and minting assets
-    address[] public airdropAssets;
+    address[] public farmingAssets;
     address[] public mintingAssets;
 
     mapping(string => bool) public isPaused;
 
-    // The numbers associated with each feature, usually inverse of one another
-    mapping(address => uint256) public balanceRequired;
-    mapping(address => uint256) public dailyMintReward;
+    // The numbers associated with each feature
+    mapping(address => uint256) public farmRewardPerSec;
+    mapping(address => uint256) public mintRewardPerSec;
 
     // The current end date for the timeframe specified.
     mapping(Timeframe => uint256) public termEnd;
@@ -45,9 +42,12 @@ contract AirdropStorageV2 {
     // The balance locked in this position.
     mapping(bytes32 => uint256) public positionBalance;
 
-    mapping(address => string) public assetSymbol;
+    // Account => Token => Balance.
+    mapping(address => mapping(address => uint256)) public farmBalance;
+    // Account => Token => Time Staked.
+    mapping(address => mapping(address => uint256)) public timeStaked;
 
-    mapping(address => uint256) public previousClaim;
+    mapping(address => string) public assetSymbol;
 
     mapping(string => uint256) public _uintStorage;
     mapping(string => address) public _addressStorage;
@@ -67,4 +67,22 @@ contract AirdropStorageV2 {
      * @param amount The amount of FREE airdropped.
      */
     event Airdrop(address indexed recipient, uint256 amount);
+
+    /**
+     * @notice Emitted when someone either deposits into a farm, or when someone timelocks tokens.
+     *
+     * @param airdrop Either "farming", or "timelock_mint".
+     * @param account The account depositing.
+     * @param amount The amount of tokens deposited.
+     */
+    event Deposit(string airdrop, address indexed account, uint256 amount);
+
+    /**
+     * @notice Emitted when someone either withdraws from a farm, or when someone unlocks tokens.
+     *
+     * @param airdrop Either "farming", or "timelock_mint".
+     * @param account The account withdrawing.
+     * @param amount The amount of tokens withdrawn.
+     */
+    event Withdrawal(string airdrop, address indexed account, uint256 amount);
 }
