@@ -154,9 +154,6 @@ contract AirdropV2 is AirdropStorageV2 {
         uint256 rewards = getMintRewards(_asset, _amount, termEnd[_timeframe]);
         uint256 unlockCost = freeToFmn(rewards);
 
-        console.log("rewards: %s", rewards);
-        console.log("unlockCost: %s", unlockCost);
-
         positionBalance[positionId] -= _amount;
 
         fmn.transferFrom(msg.sender, governance, unlockCost);
@@ -182,23 +179,22 @@ contract AirdropV2 is AirdropStorageV2 {
         }
     }
 
-    function getFarmRewards(address _account, address _asset) public view returns(uint256) {
-        // console.log("farm balance: %s, last modif: %s, farm reward per sec: %s", farmBalance[_account][_asset], lastModification[_account][_asset], farmRewardPerSec[_asset]);
+    function getFarmRewards(address _account, address _asset) public view returns(uint256 rewards) {
         uint256 sinceLastModification = block.timestamp - lastModification[_account][_asset];
         uint256 earned = farmBalance[_account][_asset] * sinceLastModification * farmRewardPerSec[_asset];
-        return earned / 10 ** 18;
+        rewards = earned / 10 ** 18;
     }
 
-    function getMintRewards(address _asset, uint256 _amount, uint256 _timestamp) public view returns(uint256) {
+    function getMintRewards(address _asset, uint256 _amount, uint256 _timestamp) public view returns(uint256 rewards) {
         uint256 time = _timestamp - block.timestamp;
         uint256 mintable = _amount * time * mintRewardPerSec[_asset];
-        return mintable / 10 ** 18;
+        rewards = mintable / 10 ** 18;
     }
 
-    function freeToFmn(uint256 _freeAmount) public view returns(uint256) {
+    function freeToFmn(uint256 _freeAmount) public view returns(uint256 fmnCost) {
         (uint112 _reserve0, uint112 _reserve1, uint32 _ts) = pool.getReserves();
-        uint256 _fmnPerFree = _reserve1 / _reserve0;
-        return _freeAmount * _fmnPerFree;
+        uint256 fmnPerFree = _freeAmount * _reserve1;
+        fmnCost = fmnPerFree / _reserve0;
     }
 
     function getPositionId(address _owner, address _asset, uint256 _termEnd) public pure returns(bytes32) {
