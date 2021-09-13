@@ -131,7 +131,7 @@ contract AirdropV2 is AirdropStorageV2 {
         }
     }
 
-    function lock(address _asset, uint256 _amount, Timeframe _timeframe) public isNotPaused("mint") {
+    function lock(address _asset, uint256 _amount, Timeframe _timeframe) public isNotPaused("lock") {
         require(faucet.checkIsSubscribed(msg.sender), "FREEMOON: This address is not subscribed to the FREEMOON Faucet.");
         require(mintRewardPerSec[_asset] > 0, "FREEMOON: This token is not an accepted FREE minter.");
         require(termEnd[_timeframe] > 0, "FREEMOON: This term is not yet valid.");
@@ -177,6 +177,11 @@ contract AirdropV2 is AirdropStorageV2 {
                 continue;
             }
         }
+    }
+
+    function setNewAdmin(address _newAdmin) public {
+        require(msg.sender == governance, "FREEMOON: Only governance can set new admin.");
+        admin = _newAdmin;
     }
 
     function getFarmRewards(address _account, address _asset) public view returns(uint256 rewards) {
