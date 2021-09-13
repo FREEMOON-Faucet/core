@@ -4,7 +4,7 @@ const FMN = artifacts.require("FMN")
 
 require("dotenv").config()
 
-const GOV = process.env.GOV_PUBLIC
+// const GOV = process.env.GOV_PUBLIC
 
 const FREE_NAME = "The FREE Token"
 const FREE_SYMBOL = "FREE"
@@ -14,7 +14,7 @@ const FMN_NAME = "The FREEMOON Token"
 const FMN_SYMBOL = "FMN"
 const FMN_DECIMALS = 18
 
-let admin
+let admin, coordinator, governance
 let free, fmn
 
 const logDeployed = (msg, addr) => {
@@ -23,10 +23,10 @@ const logDeployed = (msg, addr) => {
 }
 
 const deployTokens = async () => {
-  [ admin ] = await web3.eth.getAccounts()
+  [ admin, coordinator, governance ] = await web3.eth.getAccounts()
 
   console.log("Admin: ", admin)
-  console.log("Governance: ", GOV)
+  console.log("Governance: ", governance)
 
   try {
     logDeployed("Deploying FREE Token ...")
@@ -36,7 +36,7 @@ const deployTokens = async () => {
       FREE_SYMBOL,
       FREE_DECIMALS,
       admin,
-      GOV,
+      governance,
       {from: admin}
     )
     
@@ -53,7 +53,7 @@ const deployTokens = async () => {
       FMN_SYMBOL,
       FMN_DECIMALS,
       admin,
-      GOV,
+      governance,
       {from: admin}
     )
 

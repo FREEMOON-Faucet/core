@@ -13,6 +13,14 @@ const addresses = {
     chng: "0xf7eD89b804CC22Cb188986Eeb6D5F01d522d5138",
     any: "0x8B0Cb6c96522a5e27466808D6992838044ae7192",
     fsnFuse: "0x2ac2055cea2FDc44850F7fE52EAFD18e64a77984"
+  },
+  localnode: {
+    free: "",
+    fmn: "",
+    faucet: "",
+    airdrop: "",
+    chng: "",
+    any: ""
   }
 }
 

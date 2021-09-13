@@ -14,7 +14,8 @@
     "pause-airdrop": "npx hardhat run scripts/7_pause_airdrop.js --network fsnTestnet",
     "upgrade-faucet": "npx hardhat run scripts/8_upgrade_faucet.js --network fsnTestnet",
     "upgrade-airdrop": "npx hardhat run scripts/9_upgrade_airdrop.js --network fsnTestnet",
-    "drop": "npx hardhat run scripts/11_drop.js --network fsnMainnet"
+    "drop": "npx hardhat run scripts/11_drop.js --network fsnMainnet",
+    "local-deploy": "npx hardhat run scripts/1_deploy_tokens.js && npx hardhat run scripts/2_initial_mint.js && npx hardhat run scripts/3_deploy_faucet.js && npx hardhat run scripts/4_deploy_airdrop.js && npx hardhat run scripts/5_set_minters.js"
   },
   "repository": {
     "type": "git",

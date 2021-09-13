@@ -79,8 +79,7 @@ module.exports = {
   networks: {
     localhost: {
       url: "http://localhost:8545",
-      chainId: 31337,
-      accounts: [ process.env.ADMIN_PRIVATE ]
+      chainId: 31337
     },
     fsnTestnet: {
       url: "https://testway.freemoon.xyz/gate",
