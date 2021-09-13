@@ -135,7 +135,7 @@ contract AirdropV2 is AirdropStorageV2 {
         require(faucet.checkIsSubscribed(msg.sender), "FREEMOON: This address is not subscribed to the FREEMOON Faucet.");
         require(mintRewardPerSec[_asset] > 0, "FREEMOON: This token is not an accepted FREE minter.");
         require(termEnd[_timeframe] > 0, "FREEMOON: This term is not yet valid.");
-        require(termEnd[_timeframe] - block.timestamp > 86400, "Cannot time slice for less than one day.");
+        require(termEnd[_timeframe] - block.timestamp > 86400, "FREEMOON: Cannot time slice for less than one day.");
 
         bytes32 positionId = getPositionId(msg.sender, _asset, termEnd[_timeframe]);
         uint256 rewards = getMintRewards(_asset, _amount, termEnd[_timeframe]);
@@ -149,12 +149,16 @@ contract AirdropV2 is AirdropStorageV2 {
     function unlock(address _asset, uint256 _amount, Timeframe _timeframe) public isNotPaused("unlock") {
         require(mintRewardPerSec[_asset] > 0, "FREEMOON: This token is not an accepted FREE minter.");
         bytes32 positionId = getPositionId(msg.sender, _asset, termEnd[_timeframe]);
-        require(_amount <= positionBalance[positionId], "FREEMOON: This amount of tokens is not locked in this position.");
+        require(_amount <= positionBalance[positionId], "FREEMOON: Specified amount of tokens is not locked in this position.");
 
         uint256 rewards = getMintRewards(_asset, _amount, termEnd[_timeframe]);
         uint256 unlockCost = freeToFmn(rewards);
 
+        console.log("rewards: %s", rewards);
+        console.log("unlockCost: %s", unlockCost);
+
         positionBalance[positionId] -= _amount;
+
         fmn.transferFrom(msg.sender, governance, unlockCost);
         IFRC758(_asset).timeSliceTransferFrom(address(this), msg.sender, _amount, block.timestamp, termEnd[_timeframe]);
     }
@@ -187,7 +191,8 @@ contract AirdropV2 is AirdropStorageV2 {
 
     function getMintRewards(address _asset, uint256 _amount, uint256 _timestamp) public view returns(uint256) {
         uint256 time = _timestamp - block.timestamp;
-        return _amount * time * mintRewardPerSec[_asset];
+        uint256 mintable = _amount * time * mintRewardPerSec[_asset];
+        return mintable / 10 ** 18;
     }
 
     function freeToFmn(uint256 _freeAmount) public view returns(uint256) {

@@ -25,7 +25,13 @@ let free, fmn
 let any, farm1, farm2, farm3
 let chng, mint1, mint2, mint3
 let categories, odds
-let fromNowOneDay, startTime, newTime
+let startTime, newTime
+let oneDay, fourMonths, eightMonths, oneYear, oneYearMinusOne
+let fromNowOneDay, fromNowFourMonths, fromNowEightMonths, fromNowOneYear, fromNowOneYearMinusOne
+
+const LONG = 2
+const MEDIUM = 1
+const SHORT = 0
 
 const paramConfig = () => {
   categories = [
@@ -199,6 +205,8 @@ const deploy = async () => {
     { from: admin }
   )
 
+  await fmn.initialMint(governance, { from: admin })
+
   faucetLayout = await Faucet.new({ from: admin })
   faucetProxy = await FaucetProxy.new(faucetLayout.address, { from: admin })
   faucet = await Faucet.at(faucetProxy.address, { from: admin })
@@ -260,6 +268,10 @@ const setSymbols = async () => {
   await airdropV2.setSymbols(farmingAssets.concat(mintingAssets), symbols, { from: admin })
 }
 
+const setTerms = async ts => {
+  await airdropV2.newTerm(ts, { from: governance })
+}
+
 const setAll = async () => {
   await initialize()
   await setAssets()
@@ -274,12 +286,29 @@ const stakeThis = async () => {
   }
 }
 
+const lockThis = async () => {
+  const { mintingAssets } = assetConfig()
+  return {
+    asset: mintingAssets[0],
+    amount: utils.toWei("10")
+  }
+}
+
 const transferFarmAsset = async (to, amount) => {
   await any.transfer(to, utils.toWei(amount), { from: admin })
 }
 
-const approveFarm = async from => {
+const transferMintAsset = async (to, amount) => {
+  await chng.transfer(to, utils.toWei(amount), { from: admin })
+}
+
+const transferFmn = async to => {
+  await fmn.transfer(to, utils.toWei("2"), { from: governance })
+}
+
+const approveAirdrop = async from => {
   await any.approve(airdropV2.address, utils.toWei("100"), { from: from })
+  await chng.approve(airdropV2.address, utils.toWei("100"), { from: from })
 }
 
 const subscribe = async account => {
@@ -288,9 +317,19 @@ const subscribe = async account => {
 
 const setTimes = async () => {
   startTime = await web3.eth.getBlock("latest")
-  startTime = startTime.timestamp
+  startTime = new BigNumber(startTime.timestamp)
+  
+  oneDay = new BigNumber("86400")
+  fourMonths = oneDay.multipliedBy("30").multipliedBy("4")
+  eightMonths = fourMonths.multipliedBy("2")
+  oneYear = oneDay.multipliedBy("365")
+  oneYearMinusOne = oneYear.minus(oneDay)
 
-  fromNowOneDay = startTime + 86405
+  fromNowOneDay = startTime.plus(oneDay)
+  fromNowFourMonths = startTime.plus(fourMonths)
+  fromNowEightMonths = startTime.plus(eightMonths)
+  fromNowOneYear = startTime.plus(oneYear)
+  fromNowOneYearMinusOne = startTime.plus(oneYearMinusOne)
 }
 
 const advanceBlockAtTime = async time => {
@@ -309,6 +348,27 @@ const advanceBlockAtTime = async time => {
   )
   const newBlock = await web3.eth.getBlock("latest")
   newTime = newBlock.timestamp
+}
+
+const formatTimeBal = bal => {
+  let amountArray = bal["0"]
+  let tokenStartArray = bal["1"]
+  let tokenEndArray = bal["2"]
+
+  amountArray = amountArray.map(amt => utils.fromWei(amt))
+  tokenStartArray = tokenStartArray.map(tks => tks.toString())
+  tokenEndArray = tokenEndArray.map(tke => tke.toString())
+
+  let balances = []
+  for(let i = 0; i < amountArray.length; i++) {
+    balances.push({
+      amount: amountArray[i],
+      start: tokenStartArray[i],
+      end: tokenEndArray[i]
+    })
+  }
+
+  return balances
 }
 
 
@@ -571,7 +631,7 @@ contract("AirdropV2 Contract", async () => {
   // it("adds to farm balance", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   await airdropV2.stake(asset, amount, { from: user })
@@ -582,7 +642,7 @@ contract("AirdropV2 Contract", async () => {
   // it("transfers correct amount of tokens, if allowance is right", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   const balBefore = Number(utils.fromWei(await any.balanceOf(user)))
@@ -594,7 +654,7 @@ contract("AirdropV2 Contract", async () => {
   // it("add to farm balance harvests correct rewards and updates balance", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   await airdropV2.stake(asset, amount, { from: user })
@@ -623,7 +683,7 @@ contract("AirdropV2 Contract", async () => {
   // it("doesn't allow withdrawing an amount greater than farm balance", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   await airdropV2.stake(asset, amount, { from: user })
@@ -637,7 +697,7 @@ contract("AirdropV2 Contract", async () => {
   // it("harvest any rewards", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   await airdropV2.stake(asset, amount, { from: user })
@@ -650,7 +710,7 @@ contract("AirdropV2 Contract", async () => {
   // it("subs from farm balance", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   await airdropV2.stake(asset, amount, { from: user })
@@ -663,7 +723,7 @@ contract("AirdropV2 Contract", async () => {
   // it("transfers correct amount of tokens", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   await airdropV2.stake(asset, amount, { from: user })
@@ -676,7 +736,7 @@ contract("AirdropV2 Contract", async () => {
   // it("sub from farm balance harvests correct rewards and updates balance", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   await airdropV2.stake(asset, amount, { from: user })
@@ -702,7 +762,7 @@ contract("AirdropV2 Contract", async () => {
   // it("should mint correct amount of rewards", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   await airdropV2.stake(asset, amount, { from: user })
@@ -717,7 +777,7 @@ contract("AirdropV2 Contract", async () => {
   // it("if rewards greater than zero, update timestamp", async () => {
   //   await setAll()
   //   await transferFarmAsset(user, "100")
-  //   await approveFarm(user)
+  //   await approveAirdrop(user)
   //   await subscribe(user)
   //   const { asset, amount } = await stakeThis()
   //   await airdropV2.stake(asset, amount, { from: user })
@@ -729,30 +789,164 @@ contract("AirdropV2 Contract", async () => {
   // })
 
   // lock
-  it("ensures sender address is subscribed to FREEMOON Faucet")
+  it("ensures sender address is subscribed to FREEMOON Faucet", async () => {
+    await setAll()
+    await transferMintAsset(user, "100")
+    await approveAirdrop(user)
+    await setTerms(fromNowOneYear)
+    const { asset, amount } = await lockThis()
+    await truffleAssert.fails(
+      airdropV2.lock(asset, amount, LONG, { from: user }),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: This address is not subscribed to the FREEMOON Faucet."
+    )
+  })
 
-  it("doesn't allow token that isn't on mint list")
+  it("doesn't allow token that isn't on mint list", async () => {
+    await setAll()
+    await transferMintAsset(user, "100")
+    await approveAirdrop(user)
+    await subscribe(user)
+    await setTerms(fromNowOneYear)
+    const { amount } = await lockThis()
+    await truffleAssert.fails(
+      airdropV2.lock(dummy, amount, LONG, { from: user }),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: This token is not an accepted FREE minter."
+    )
+  })
 
-  it("ensure valid term timestamp")
+  it("ensure valid term timestamp", async () => {
+    await setAll()
+    await transferMintAsset(user, "100")
+    await approveAirdrop(user)
+    await subscribe(user)
+    await setTerms(fromNowOneYear)
+    const { asset, amount } = await lockThis()
+    await truffleAssert.fails(
+      airdropV2.lock(asset, amount, MEDIUM, { from: user }),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: This term is not yet valid."
+    )
+  })
 
-  it("cannot add to a term pool if closer than 1 day away")
+  it("cannot add to a term pool if closer than 1 day away", async () => {
+    await setAll()
+    await transferMintAsset(user, "100")
+    await approveAirdrop(user)
+    await subscribe(user)
+    await setTerms(fromNowOneYear)
+    const { asset, amount } = await lockThis()
+    await advanceBlockAtTime(fromNowOneYearMinusOne.toNumber())
+    await truffleAssert.fails(
+      airdropV2.lock(asset, amount, LONG, { from: user }),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Cannot time slice for less than one day."
+    )
+  })
 
-  it("adds to the position balance")
+  it("adds to the position balance", async () => {
+    await setAll()
+    await transferMintAsset(user, "100")
+    await approveAirdrop(user)
+    await subscribe(user)
+    await setTerms(fromNowOneYear)
+    const { asset, amount } = await lockThis()
+    const termEnd = await airdropV2.termEnd(LONG)
+    const positionId = await airdropV2.getPositionId(user, asset, termEnd)
+    await airdropV2.lock(asset, amount, LONG, { from: user })
+    const balLocked = utils.fromWei(await airdropV2.positionBalance(positionId))
+    expect(balLocked).to.equal(utils.fromWei(amount))
+  })
 
-  it("transfers correct slice, if allowance is right")
+  it("adds to existing balance", async () => {
+    await setAll()
+    await transferMintAsset(user, "100")
+    await approveAirdrop(user)
+    await subscribe(user)
+    await setTerms(fromNowOneYear)
+    const { asset, amount } = await lockThis()
+    const termEnd = await airdropV2.termEnd(LONG)
+    const positionId = await airdropV2.getPositionId(user, asset, termEnd)
+    await airdropV2.lock(asset, amount, LONG, { from: user })
+    const balLockedBefore = Number(utils.fromWei(await airdropV2.positionBalance(positionId)))
+    await airdropV2.lock(asset, amount, LONG, { from: user })
+    const balLockedAfter = Number(utils.fromWei(await airdropV2.positionBalance(positionId)))
+    expect(balLockedAfter).to.equal(balLockedBefore + Number(utils.fromWei(amount)))
+  })
 
-  it("mints correct amount of rewards")
+  it("transfers correct slice, if allowance is right", async () => {
+    await setAll()
+    await transferMintAsset(user, "100")
+    await approveAirdrop(user)
+    await subscribe(user)
+    await setTerms(fromNowOneYear)
+    const { asset, amount } = await lockThis()
+    await airdropV2.lock(asset, amount, LONG, { from: user })
+    const timeframeLocked = formatTimeBal(await chng.sliceOf(airdropV2.address))
+    const sliceCreated = timeframeLocked[1]
+    expect(sliceCreated.amount).to.equal(utils.fromWei(amount))
+    expect(Number(sliceCreated.end - Number(sliceCreated.start) - oneYear.toNumber())).to.be.lessThanOrEqual(10)
+  })
+
+  it("mints correct amount of rewards", async () => {
+    await setAll()
+    await transferMintAsset(user, "100")
+    await approveAirdrop(user)
+    await subscribe(user)
+    await setTerms(fromNowOneYear)
+    const { asset, amount } = await lockThis()
+    await airdropV2.lock(asset, amount, LONG, { from: user })
+    const termEnd = await airdropV2.termEnd(LONG)
+    const mintable = utils.fromWei(await airdropV2.getMintRewards(asset, amount, termEnd))
+    const freeBal = utils.fromWei(await free.balanceOf(user))
+    expect(freeBal).to.equal(mintable)
+  })
 
   // unlock
-  it("doesn't allow token that isn't on mint list")
+  it("doesn't allow token that isn't on mint list", async () => {
+    await setAll()
+    await subscribe(user)
+    const { amount } = await lockThis()
+    await truffleAssert.fails(
+      airdropV2.unlock(dummy, amount, LONG, { from: user }),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: This token is not an accepted FREE minter."
+    )
+  })
 
-  it("must have at least the specified amount in position balance")
+  it("must have at least the specified amount in position balance", async () => {
+    await setAll()
+    await subscribe(user)
+    const { asset, amount } = await lockThis()
+    await truffleAssert.fails(
+      airdropV2.unlock(asset, amount, LONG, { from: user }),
+      truffleAssert.ErrorType.REVERT,
+      "FREEMOON: Specified amount of tokens is not locked in this position."
+    )
+  })
 
-  it("gets correct value of position in free and fmn")
-
-  it("subs from the position balance")
+  it("subs from the position balance", async () => {
+    await setAll()
+    await transferMintAsset(user, "100")
+    await transferFmn(user)
+    await approveAirdrop(user)
+    await subscribe(user)
+    await setTerms(fromNowOneYear)
+    const { asset, amount } = await lockThis()
+    const termEnd = await airdropV2.termEnd(LONG)
+    const positionId = await airdropV2.getPositionId(user, asset, termEnd)
+    const posBalBefore = utils.fromWei(await airdropV2.positionBalance(positionId))
+    console.log(`FMN: ${ fmn.address }, AIRDROPV2: ${ airdropV2.address }`)
+    await airdropV2.lock(asset, amount, LONG, { from: user })
+    await airdropV2.unlock(asset, utils.toWei("5"), LONG, { from: user })
+    const posBalAfter = utils.fromWei(await airdropV2.positionBalance(asset, user))
+    expect(Number(posBalAfter)).to.equal(Number(posBalBefore) - 5)
+  })
 
   it("transfers correct amount of fmn, if allowance is right")
+
+  it("transfers correct slice from position")
 
   // new term
   it("new term can't be called by non-gov")
