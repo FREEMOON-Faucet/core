@@ -65,7 +65,7 @@ const deploy = async () => {
   console.log(`ANY: ${ any.address }`)
 
   chng = await MockFRC758.new(
-    "Chaing Finance",
+    "Chainge Finance",
     "CHNG",
     utils.toWei("10000000"),
     { from: admin }
