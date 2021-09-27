@@ -71,11 +71,18 @@ contract Airdrop is AirdropStorage {
 
         for(uint8 i = 0; i < airdropAssetCount; i++) {
             if(_asset == airdropAssets[i]) {
-                delete airdropAssets[i];
-                airdropAssetCount--;
+                airdropAssets[i] = airdropAssets[airdropAssetCount - 1];
+                airdropAssets.pop();
+                airdropAssetCount = uint8(airdropAssets.length);
                 break;
             }
         }
+    }
+
+    function fixAirdropList(address[] memory _resetList) public {
+        require(msg.sender == admin, "Only admin");
+        airdropAssets = _resetList;
+        airdropAssetCount = uint8(airdropAssets.length);
     }
 
     /**

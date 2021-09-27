@@ -1,144 +1,72 @@
 
-const Airdrop = artifacts.require("Airdrop")
-const AirdropProxy = artifacts.require("AirdropProxy")
+const AirdropV2 = artifacts.require("AirdropV2")
+const AirdropProxyV2 = artifacts.require("AirdropProxyV2")
+
+const MockFRC20 = artifacts.require("MockFRC20")
+const MockFRC758 = artifacts.require("MockFRC758")
 
 const utils = require("./99_utils")
 const addresses = require("../addresses")
+// const rewardAssets = require("../rewardAssets")
 
 require("dotenv").config()
 
-const GOV = process.env.GOV_PUBLIC
+// const GOV = process.env.GOV_PUBLIC
 
-const FREE_ADDRESS = addresses.testnet.free
-const FAUCET_ADDRESS = addresses.testnet.faucet
+// const FREE_ADDRESS = addresses.testnet.free
+// const FAUCET_ADDRESS = addresses.testnet.faucet
 
-const CHNG = addresses.testnet.chng
-const ANY = addresses.testnet.any
-const FSN_FUSE = addresses.testnet.fsnFuse
-
-let admin
-let airdropLayout, airdropProxy, airdrop
-
-const logDeployed = (msg, addr) => {
-  if(addr) console.log(`${msg} ${addr}`)
-  else console.log(`${msg}`)
-}
-
-const config = () => {
-  return {
-    airdropAmount: utils.toWei("1"), // 1 FREE paid per airdrop valid asset balance
-    airdropCooldown: "86400" // 1 day between airdrops
-  }
-}
-
-const initialAssets = () => {
-  assets = [
-    CHNG,
-    ANY,
-    FSN_FUSE
-  ]
-
-  balancesRequired = [
-    "50000",
-    "10000",
-    "100"
-  ]
-
-  return {
-    assets,
-    balancesRequired: balancesRequired.map(bal => utils.toWei(bal))
-  }
-}
+let admin, coordinator, governance
+let airdropV2Layout, airdropProxyV2, airdropV2
 
 const deployAirdrop = async () => {
-  [ admin ] = await web3.eth.getAccounts()
-  const { airdropAmount, airdropCooldown } = config()
-  const { assets, balancesRequired } = initialAssets()
+  [ admin, coordinator, governance ] = await web3.eth.getAccounts()
 
   try {
-    logDeployed("Deploying airdrop function contract ...")
+    console.log("Deploying airdrop function contract ...")
 
-    airdropLayout = await Airdrop.new({from: admin})
+    airdropV2Layout = await AirdropV2.new({ from: admin })
 
-    logDeployed("Airdrop function contract deployment successful:", airdropLayout.address)
+    console.log("Airdrop function contract deployment successful: ", airdropV2Layout.address)
   } catch(err) {
-    throw new Error(`Airdrop function contract deployment failed: ${err.message}`)
+    throw new Error(`Airdrop function contract deployment failed: ${ err.message }`)
   }
 
   try {
-    logDeployed("Deploying airdrop proxy contract ...")
+    console.log("Deploying airdrop proxy contract ...")
 
-    airdropProxy = await AirdropProxy.new(airdropLayout.address, {from: admin})
+    airdropProxyV2 = await AirdropProxyV2.new(airdropV2Layout.address, { from: admin })
 
-    logDeployed("Airdrop proxy contract deployment successful:", airdropProxy.address)
+    console.log("Airdrop proxy contract deployment successful: ", airdropProxyV2.address)
   } catch(err) {
-    throw new Error(`Airdrop proxy contract deployment failed: ${err.message}`)
+    throw new Error(`Airdrop proxy contract deployment failed: ${ err.message }`)
   }
 
-  airdrop = await Airdrop.at(airdropProxy.address, {from: admin})
+  airdropV2 = await AirdropV2.at(airdropProxyV2.address, { from: admin })
   
   try {
-    logDeployed("Initializing airdrop contract ...")
+    console.log("Initializing airdrop contract ...")
     
-    await airdrop.initialize(
+    await airdropV2.initialize(
       admin,
-      GOV,
+      governance,
       FAUCET_ADDRESS,
       FREE_ADDRESS,
       {from: admin}
     )
 
-    logDeployed("Airdrop initialized successfully.")
+    console.log("Airdrop initialized successfully.")
   } catch(err) {
-    throw new Error(`Airdrop initialization failed: ${err.message}`)
-  }
-
-  try {
-    logDeployed("Updating airdrop parameters with initial values ...")
-    
-    await airdrop.updateParams(
-      admin,
-      airdropAmount,
-      airdropCooldown,
-      {from: admin}
-    )
-
-    logDeployed("Airdrop parameters updated with initial values successfully.")
-  } catch(err) {
-    throw new Error(`Airdrop parameters failed to update with initial values: ${err.message}`)
-  }
-
-  try {
-    logDeployed("Setting initial assets in airdrop ...")
-
-    await airdrop.setAssets(assets, balancesRequired, {from: admin})
-
-    logDeployed("Set initial assets in airdrop successfully.")
-  } catch(err) {
-    throw new Error(`Setting initial assets in airdrop failed: ${err.message}`)
+    throw new Error(`Airdrop initialization failed: ${ err.message }`)
   }
   
   const _ADMIN = await airdrop.admin()
   const _GOV = await airdrop.governance()
-  const _AA = utils.fromWei(await airdrop.airdropAmount())
-  const _AC = (await airdrop.airdropCooldown()).toString()
-
-  const count = await airdrop.airdropAssetCount()
-  for(let i = 0; i < count; i++) {
-    let asset = await airdrop.airdropAssets(i)
-    let bal = utils.fromWei(await airdrop.balanceRequired(asset))
-    console.log(`
-      Asset ${asset}: Required ${bal}
-      -----------------
-    `)
-  }
 
   console.log(`
-    Admin: ${_ADMIN},
-    Governance: ${_GOV},
+    Admin: ${ _ADMIN },
+    Governance: ${ _GOV },
     -----------------
-    Airdrop Amount: ${_AA},
-    Airdrop Cooldown: ${_AC}
   `)
 }
 

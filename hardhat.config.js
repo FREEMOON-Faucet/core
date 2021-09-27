@@ -50,31 +50,49 @@ module.exports = {
             }
           }
         } 
+      },
+      {
+        version: "0.5.16",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          },
+          evmVersion: "byzantium",
+          outputSelection: {
+            "*": {
+              "*": [
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object",
+                "abi",
+                "evm.bytecode.sourceMap",
+                "evm.deployedBytecode.sourceMap",
+                "metadata"
+              ],
+              "": ["ast"]
+            }
+          }
+        }
       }
     ]
   },
   networks: {
     localhost: {
       url: "http://localhost:8545",
-      chainId: 31337,
-      accounts: [ process.env.ADMIN_PRIVATE ]
+      chainId: 31337
     },
     fsnTestnet: {
       url: "https://testway.freemoon.xyz/gate",
       chainId: 46688,
-      accounts: {
-        mnemonic: process.env.MNEMONIC
-      },
-      gas: 8000000,
-      gasPrice: 10000000000
+      accounts: [ process.env.PK ]
     },
-    fsnMainnet: {
-      url: "https://mainway.freemoon.xyz/gate",
-      chainId: 32659,
-      accounts: [ process.env.ADMIN_PRIVATE ],
-      gas: 8000000,
-      gasPrice: 10000000000
-    }
+    // fsnMainnet: {
+    //   url: "https://mainway.freemoon.xyz/gate",
+    //   chainId: 32659,
+    //   accounts: [ process.env.ADMIN_PRIVATE ],
+    //   gas: 8000000,
+    //   gasPrice: 10000000000
+    // }
   },
   mocha: {
     timeout: 600000

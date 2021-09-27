@@ -7,12 +7,12 @@ const addresses = require("../addresses")
 
 require("dotenv").config()
 
-const GOV = process.env.GOV_PUBLIC
+// const GOV = process.env.GOV_PUBLIC
 
-const FREE_ADDRESS = addresses.testnet.free
-const FMN_ADDRESS = addresses.testnet.fmn
+const FREE_ADDRESS = addresses.localnode.free
+const FMN_ADDRESS = addresses.localnode.fmn
 
-let admin
+let admin, coordinator, governance
 let free, fmn
 
 const logDeployed = (msg, addr) => {
@@ -21,7 +21,7 @@ const logDeployed = (msg, addr) => {
 }
 
 const initialMint = async () => {
-  [ admin ] = await web3.eth.getAccounts()
+  [ admin, coordinator, governance ] = await web3.eth.getAccounts()
 
   console.log("Admin: ", admin)
 
@@ -31,9 +31,9 @@ const initialMint = async () => {
   try {
     logDeployed("Minting initial supply of FREE ...")
 
-    await free.initialMint(GOV, {from: admin})
+    await free.initialMint(governance, {from: admin})
 
-    const freeBal = utils.fromWei(await free.balanceOf(GOV))
+    const freeBal = utils.fromWei(await free.balanceOf(governance))
 
     logDeployed("FREE minted successfully:", freeBal)
   } catch(err) {
@@ -43,9 +43,9 @@ const initialMint = async () => {
   try {
     logDeployed("Minting initial supply of FMN ...")
 
-    await fmn.initialMint(GOV, {from: admin})
+    await fmn.initialMint(governance, {from: admin})
 
-    const fmnBal = utils.fromWei(await fmn.balanceOf(GOV))
+    const fmnBal = utils.fromWei(await fmn.balanceOf(governance))
 
     logDeployed("FMN minted successfully:", fmnBal)
   } catch(err) {

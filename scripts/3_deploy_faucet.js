@@ -7,11 +7,11 @@ const addresses = require("../addresses")
 
 require("dotenv").config()
 
-const GOV = process.env.GOV_PUBLIC
-const COORDINATOR = process.env.COORDINATOR_PUBLIC
+// const GOV = process.env.GOV_PUBLIC
+// const COORDINATOR = process.env.COORDINATOR_PUBLIC
 
-const FREE_ADDRESS = addresses.testnet.free
-const FMN_ADDRESS = addresses.testnet.fmn
+const FREE_ADDRESS = addresses.localnode.free
+const FMN_ADDRESS = addresses.localnode.fmn
 
 let admin
 let faucetLayout, faucetProxy, faucet
@@ -56,7 +56,7 @@ const config = () => {
 }
 
 const deployFaucet = async () => {
-  [ admin ] = await web3.eth.getAccounts()
+  [ admin, coordinator, governance ] = await web3.eth.getAccounts()
   const { subscriptionCost, cooldownTime, payoutThreshold, payoutAmount, hotWalletLimit, categories, odds } = config()
 
   try {
@@ -86,7 +86,7 @@ const deployFaucet = async () => {
     
     await faucet.initialize(
       admin,
-      GOV,
+      governance,
       FREE_ADDRESS,
       FMN_ADDRESS,
       categories,
@@ -104,7 +104,7 @@ const deployFaucet = async () => {
     
     await faucet.updateParams(
       admin,
-      COORDINATOR,
+      coordinator,
       subscriptionCost,
       cooldownTime,
       payoutThreshold,
