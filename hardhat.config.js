@@ -93,13 +93,20 @@ module.exports = {
     //   gas: 8000000,
     //   gasPrice: 10000000000
     // },
-    // bscTestnet: {
-    //   url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
-    //   chainId: 97,
-    //   accounts: [ process.env.ADMIN_PK, process.env.COORD_PK, process.env.GOV_PK ],
-    //   gas: 1000000,
-    //   gasPrice: 10000000000
-    // }
+    bscTestnet: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+      chainId: 97,
+      accounts: [ process.env.ADMIN_PK, process.env.HH_C_PK, process.env.HH_G_PK ],
+      gas: 1000000,
+      gasPrice: 10000000000
+    },
+    ftmTestnet: {
+      url: "https://xapi.testnet.fantom.network/lachesis",
+      chainId: 4002,
+      accounts: [ process.env.ADMIN_PK, process.env.HH_C_PK, process.env.HH_G_PK ],
+      gas: 8000000,
+      gasPrice: 2000000000
+    }
   },
   mocha: {
     timeout: 600000
