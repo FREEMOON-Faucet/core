@@ -97,8 +97,6 @@ module.exports = {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
       chainId: 97,
       accounts: [ process.env.ADMIN_PK, process.env.HH_C_PK, process.env.HH_G_PK ],
-      gas: 1000000,
-      gasPrice: 10000000000
     },
     ftmTestnet: {
       url: "https://xapi.testnet.fantom.network/lachesis",

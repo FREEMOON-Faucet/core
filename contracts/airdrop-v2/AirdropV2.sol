@@ -146,18 +146,18 @@ contract AirdropV2 is AirdropStorageV2 {
         free.mint(msg.sender, rewards);
     }
 
-    function unlock(address _asset, uint256 _amount, Timeframe _timeframe) public isNotPaused("unlock") {
+    function unlock(address _asset, Timeframe _timeframe) public isNotPaused("unlock") {
         require(mintRewardPerSec[_asset] > 0, "FREEMOON: This token is not an accepted FREE minter.");
         bytes32 positionId = getPositionId(msg.sender, _asset, termEnd[_timeframe]);
-        require(_amount <= positionBalance[positionId], "FREEMOON: Specified amount of tokens is not locked in this position.");
+        uint256 amount = positionBalance[positionId];
 
-        uint256 rewards = getMintRewards(_asset, _amount, termEnd[_timeframe]);
+        uint256 rewards = getMintRewards(_asset, amount, termEnd[_timeframe]);
         uint256 unlockCost = freeToFmn(rewards);
 
-        positionBalance[positionId] -= _amount;
+        positionBalance[positionId] = 0;
 
         fmn.transferFrom(msg.sender, governance, unlockCost);
-        IFRC758(_asset).timeSliceTransferFrom(address(this), msg.sender, _amount, block.timestamp, termEnd[_timeframe]);
+        IFRC758(_asset).timeSliceTransferFrom(address(this), msg.sender, amount, block.timestamp, termEnd[_timeframe]);
     }
 
     function newTerm(uint256 _timestamp) public {

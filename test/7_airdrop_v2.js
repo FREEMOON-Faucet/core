@@ -917,24 +917,13 @@ contract("AirdropV2 Contract", async () => {
     await subscribe(user)
     const { amount } = await lockThis()
     await truffleAssert.fails(
-      airdropV2.unlock(dummy, amount, LONG, { from: user }),
+      airdropV2.unlock(dummy, LONG, { from: user }),
       truffleAssert.ErrorType.REVERT,
       "FREEMOON: This token is not an accepted FREE minter."
     )
   })
 
-  it("must have at least the specified amount in position balance", async () => {
-    await setAll()
-    await subscribe(user)
-    const { asset, amount } = await lockThis()
-    await truffleAssert.fails(
-      airdropV2.unlock(asset, amount, LONG, { from: user }),
-      truffleAssert.ErrorType.REVERT,
-      "FREEMOON: Specified amount of tokens is not locked in this position."
-    )
-  })
-
-  it("subs from the position balance", async () => {
+  it("sets position balance to zero", async () => {
     await setAll()
     await transferMintAsset(user, "100")
     await transferFmn(user)
@@ -946,9 +935,9 @@ contract("AirdropV2 Contract", async () => {
     const positionId = await airdropV2.getPositionId(user, asset, termEnd)
     await airdropV2.lock(asset, amount, LONG, { from: user })
     const posBalBefore = utils.fromWei(await airdropV2.positionBalance(positionId))
-    await airdropV2.unlock(asset, utils.toWei("5"), LONG, { from: user })
+    await airdropV2.unlock(asset, LONG, { from: user })
     const posBalAfter = utils.fromWei(await airdropV2.positionBalance(positionId))
-    expect(Number(posBalAfter)).to.equal(Number(posBalBefore) - 5)
+    expect(Number(posBalAfter)).to.equal(0)
   })
 
   it("transfers correct amount of fmn, if allowance is right", async () => {
@@ -960,7 +949,7 @@ contract("AirdropV2 Contract", async () => {
     await setTerm(fromNowOneYear)
     const { asset, amount } = await lockThis()
     await airdropV2.lock(asset, amount, LONG, { from: user })
-    await airdropV2.unlock(asset, amount, LONG, { from: user })
+    await airdropV2.unlock(asset, LONG, { from: user })
     const freeBal = await free.balanceOf(user)
     const fmnCost = utils.fromWei(await airdropV2.freeToFmn(freeBal))
     const fmnBal = utils.fromWei(await fmn.balanceOf(governance))
@@ -979,7 +968,7 @@ contract("AirdropV2 Contract", async () => {
     const sliceOfAirdrop = formatTimeBal(await chng.sliceOf(airdropV2.address))
     const sliceAmountAirdrop = sliceOfAirdrop[1].amount
     const sliceEndAirdrop = sliceOfAirdrop[1].end
-    await airdropV2.unlock(asset, amount, LONG, { from: user })
+    await airdropV2.unlock(asset, LONG, { from: user })
     const sliceOfUser = formatTimeBal(await chng.sliceOf(user))
     const sliceAmountUser = sliceOfUser[1].amount
     const sliceStartUser = sliceOfUser[1].start
