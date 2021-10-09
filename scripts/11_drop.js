@@ -19,7 +19,7 @@ const FAUCET_ADDRESS = addresses.mainnet.faucet
 const POOL_ADDRESS = "0xeaee692277d8efd28326204751a0b689efc2720d"
 
 const drop = async () => {
-  [ admin, c, governance ] = await web3.eth.getAccounts()
+  [ admin ] = await web3.eth.getAccounts()
 
   airdrop = await Airdrop.at(AIRDROP_ADDRESS)
   free = await FREE.at(FREE_ADDRESS)

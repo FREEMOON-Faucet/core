@@ -51,8 +51,8 @@ const deploy = async () => {
   [ admin, coordinator, governance ] = await web3.eth.getAccounts()
 
   console.log(`ADMIN: ${ admin.toLowerCase() }`)
-  console.log(`coordinatorINATOR: ${ coordinator.toLowerCase() }`)
-  console.log(`governanceERNANCE: ${ governance.toLowerCase() }`)
+  console.log(`coordinator: ${ coordinator.toLowerCase() }`)
+  console.log(`governance: ${ governance.toLowerCase() }`)
 
   const airdropV2 = await AirdropV2.at("")
   console.log(`AirdropV2 address: ${ airdropV2.address }`)

@@ -62,13 +62,13 @@ contract AirdropStorageV2 {
         Long
     }
 
-    /**
-     * @notice Emitted when someone claims their owed FREE airdrop.
-     *
-     * @param recipient The receiver of the FREE airdrop.
-     * @param amount The amount of FREE airdropped.
-     */
-    event Airdrop(address indexed recipient, uint256 amount);
+    // /**
+    //  * @notice Emitted when someone claims their owed FREE airdrop.
+    //  *
+    //  * @param recipient The receiver of the FREE airdrop.
+    //  * @param amount The amount of FREE airdropped.
+    //  */
+    // event Airdrop(address indexed recipient, uint256 amount);
 
     /**
      * @notice Emitted when someone either deposits into a farm, or when someone timelocks tokens.
