@@ -77,6 +77,7 @@ contract AirdropV2 is AirdropStorageV2 {
 
         for(uint8 i = 0; i < farmingAssets.length; i++) {
             if(_asset == farmingAssets[i]) {
+                farmRewardPerSec[_asset] = 0;
                 farmingAssets[i] = farmingAssets[farmingAssets.length - 1];
                 farmingAssets.pop();
                 break;
@@ -89,6 +90,7 @@ contract AirdropV2 is AirdropStorageV2 {
 
         for(uint8 i = 0; i < mintingAssets.length; i++) {
           if(_asset == mintingAssets[i]) {
+                mintRewardPerSec[_asset] = 0;
               mintingAssets[i] = mintingAssets[mintingAssets.length - 1];
               mintingAssets.pop();
               break;

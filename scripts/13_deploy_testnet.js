@@ -54,8 +54,8 @@ const deploy = async () => {
   console.log(`coordinator: ${ coordinator.toLowerCase() }`)
   console.log(`governance: ${ governance.toLowerCase() }`)
 
-  const airdropV2 = await AirdropV2.at("")
-  console.log(`AirdropV2 address: ${ airdropV2.address }`)
+  // const airdropV2 = await AirdropV2.at("")
+  // console.log(`AirdropV2 address: ${ airdropV2.address }`)
 
   try {
     console.log(`###### Pool ######`)
