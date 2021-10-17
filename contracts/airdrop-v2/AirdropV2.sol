@@ -79,6 +79,7 @@ contract AirdropV2 is AirdropStorageV2 {
             if(_asset == farmingAssets[i]) {
                 farmingAssets[i] = farmingAssets[farmingAssets.length - 1];
                 farmingAssets.pop();
+                farmRewardPerSec[_asset] = 0;
                 break;
             }
         }
@@ -88,10 +89,11 @@ contract AirdropV2 is AirdropStorageV2 {
         require(msg.sender == governance, "FREEMOON: Only the governance address can remove assets.");
 
         for(uint8 i = 0; i < mintingAssets.length; i++) {
-          if(_asset == mintingAssets[i]) {
-              mintingAssets[i] = mintingAssets[mintingAssets.length - 1];
-              mintingAssets.pop();
-              break;
+            if(_asset == mintingAssets[i]) {
+                mintingAssets[i] = mintingAssets[mintingAssets.length - 1];
+                mintingAssets.pop();
+                mintRewardPerSec[_asset] = 0;
+                break;
             }
         }
     }
