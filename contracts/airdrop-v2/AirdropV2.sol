@@ -77,6 +77,7 @@ contract AirdropV2 is AirdropStorageV2 {
 
         for(uint8 i = 0; i < farmingAssets.length; i++) {
             if(_asset == farmingAssets[i]) {
+                farmRewardPerSec[_asset] = 0;
                 farmingAssets[i] = farmingAssets[farmingAssets.length - 1];
                 farmingAssets.pop();
                 farmRewardPerSec[_asset] = 0;
@@ -114,6 +115,8 @@ contract AirdropV2 is AirdropStorageV2 {
         harvest(_asset);
         farmBalance[msg.sender][_asset] += _amount;
         IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
+
+        emit Deposit("farming", msg.sender, _amount);
     }
 
     function unstake(address _asset, uint256 _amount) public isNotPaused("unstake") {
@@ -122,6 +125,8 @@ contract AirdropV2 is AirdropStorageV2 {
         harvest(_asset);
         farmBalance[msg.sender][_asset] -= _amount;
         IERC20(_asset).transfer(msg.sender, _amount);
+
+        emit Withdrawal("farming", msg.sender, _amount);
     }
 
     function harvest(address _asset) public isNotPaused("harvest") {
@@ -146,6 +151,8 @@ contract AirdropV2 is AirdropStorageV2 {
 
         IFRC758(_asset).timeSliceTransferFrom(msg.sender, address(this), _amount, block.timestamp, termEnd[_timeframe]);
         free.mint(msg.sender, rewards);
+
+        emit Deposit("farming_mint", msg.sender, _amount);
     }
 
     function unlock(address _asset, Timeframe _timeframe) public isNotPaused("unlock") {
@@ -160,6 +167,8 @@ contract AirdropV2 is AirdropStorageV2 {
 
         fmn.transferFrom(msg.sender, governance, unlockCost);
         IFRC758(_asset).timeSliceTransferFrom(address(this), msg.sender, amount, block.timestamp, termEnd[_timeframe]);
+
+        emit Withdrawal("farming_mint", msg.sender, amount);
     }
 
     function newTerm(uint256 _timestamp) public {

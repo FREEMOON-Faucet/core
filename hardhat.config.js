@@ -81,15 +81,38 @@ module.exports = {
       url: "http://localhost:8545",
       chainId: 31337
     },
+<<<<<<< HEAD
     // fsnTestnet: {
     //   url: "https://testway.freemoon.xyz/gate",
     //   chainId: 46688,
     //   accounts: [ process.env.ADMIN_PK, process.env.HH_C_PK, process.env.HH_G_PK ]
     // },
+=======
+    fsnTestnet: {
+      url: "https://testway.freemoon.xyz/gate",
+      chainId: 46688,
+      accounts: [ process.env.ADMIN_PK, process.env.HH_C_PK, process.env.HH_G_PK ]
+    },
+>>>>>>> 5558a384ee264a756f328874c13c9ebbe08a8c47
     fsnMainnet: {
       url: "https://mainway.freemoon.xyz/gate",
       chainId: 32659,
       accounts: [ process.env.ADMIN_PRIVATE ],
+<<<<<<< HEAD
+=======
+      gas: 8000000,
+      gasPrice: 10000000000
+    },
+    bscTestnet: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+      chainId: 97,
+      accounts: [ process.env.ADMIN_PK, process.env.HH_C_PK, process.env.HH_G_PK ],
+    },
+    ftmTestnet: {
+      url: "https://xapi.testnet.fantom.network/lachesis",
+      chainId: 4002,
+      accounts: [ process.env.ADMIN_PK, process.env.HH_C_PK, process.env.HH_G_PK ],
+>>>>>>> 5558a384ee264a756f328874c13c9ebbe08a8c47
       gas: 8000000,
       gasPrice: 10000000000
     },
