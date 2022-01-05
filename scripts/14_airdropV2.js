@@ -46,46 +46,46 @@ const deploy = async () => {
 
   try {
     console.log(`###### Airdrop V2 ######`)
-    // airdropV2Layout = await AirdropV2.new({ from: admin })
-    // airdropProxyV2 = await AirdropProxyV2.new(airdropV2Layout.address, { from: admin })
-    airdropV2 = await AirdropV2.at(addresses.mainnet.airdropV2, { from: admin })
+    airdropV2Layout = await AirdropV2.new({ from: admin })
+    airdropProxyV2 = await AirdropProxyV2.new(airdropV2Layout.address, { from: admin })
+    airdropV2 = await AirdropV2.at(airdropProxyV2.address, { from: admin })
     console.log(`AIRDROPV2: ${ airdropV2.address }`)
   } catch(err) {
     console.log(`AIRDROPV2 Failed: ${ err.message }`)
   }
 
-  // try {
-  //   console.log(`###### Initialize Airdrop ######`)
-  //   await airdropV2.initialize(
-  //     admin,
-  //     GOV,
-  //     FAUCET,
-  //     FREE,
-  //     FMN,
-  //     POOL,
-  //     { from: admin }
-  //   )
-  //   console.log(`INITIALIZE AIRDROP Success.`)
-  // } catch(err) {
-  //   console.log(`INTIIALIZE AIRDROP Failed: ${ err.message }`)
-  // }
+  try {
+    console.log(`###### Initialize Airdrop ######`)
+    await airdropV2.initialize(
+      admin,
+      GOV,
+      FAUCET,
+      FREE,
+      FMN,
+      POOL,
+      { from: admin }
+    )
+    console.log(`INITIALIZE AIRDROP Success.`)
+  } catch(err) {
+    console.log(`INTIIALIZE AIRDROP Failed: ${ err.message }`)
+  }
 
-  // try {
-  //   console.log(`###### Set Assets ######`)
-  //   await airdropV2.setFarmingAssets(farmAddresses, farmAmounts, { from: admin })
-  //   await airdropV2.setMintingAssets(mintAddresses, mintAmounts, { from: admin })
-  //   console.log(`SET ASSETS Success.`)
-  // } catch(err) {
-  //   console.log(`SET ASSETS Failed: ${ err.message }`)
-  // }
+  try {
+    console.log(`###### Set Assets ######`)
+    await airdropV2.setFarmingAssets(farmAddresses, farmAmounts, { from: admin })
+    await airdropV2.setMintingAssets(mintAddresses, mintAmounts, { from: admin })
+    console.log(`SET ASSETS Success.`)
+  } catch(err) {
+    console.log(`SET ASSETS Failed: ${ err.message }`)
+  }
 
-  // try {
-  //   console.log(`###### Set Symbols ######`)
-  //   await airdropV2.setSymbols(farmAddresses.concat(mintAddresses), farmSymbols.concat(mintSymbols), { from: admin })
-  //   console.log(`SET SYMBOLS Success.`)
-  // } catch(err) {
-  //   console.log(`SET SYMBOLS Failed: ${ err.message }`)
-  // }
+  try {
+    console.log(`###### Set Symbols ######`)
+    await airdropV2.setSymbols(farmAddresses.concat(mintAddresses), farmSymbols.concat(mintSymbols), { from: admin })
+    console.log(`SET SYMBOLS Success.`)
+  } catch(err) {
+    console.log(`SET SYMBOLS Failed: ${ err.message }`)
+  }
 
   try {
     let adminSet = await airdropV2.admin()
@@ -98,9 +98,9 @@ const deploy = async () => {
       Admin: ${ adminSet }
       Gov: ${ govSet }
       Faucet: ${ faucetSet }
-      free: ${ freeSet }
+      Free: ${ freeSet }
       Fmn: ${ fmnSet }
-      pool: ${ poolSet }
+      Pool: ${ poolSet }
     `)
   } catch(err) {
     console.log(`Could not get values: ${ err.message }`)
