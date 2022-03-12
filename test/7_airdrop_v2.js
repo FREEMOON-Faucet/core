@@ -11,7 +11,8 @@ const FaucetProxy = artifacts.require("FaucetProxy")
 const AirdropV2 = artifacts.require("AirdropV2")
 const AirdropProxyV2 = artifacts.require("AirdropProxyV2")
 
-const MockFRC758 = artifacts.require("MockFRC758")
+// const MockFRC758 = artifacts.require("MockFRC758")
+const MockFRC758 = artifacts.require("MockFRC759")
 const MockFRC20 = artifacts.require("MockFRC20")
 const ChaingeDexPair = artifacts.require("ChaingeDexPair")
 
@@ -169,28 +170,36 @@ const deploy = async () => {
   chng = await MockFRC758.new(
     "Chainge Finance",
     "CHNG",
+    18,
     utils.toWei("10000000"),
+    utils.toWei("1000000000"),
     { from: admin }
   )
 
   mint1 = await MockFRC758.new(
     "Mint1",
     "MNT1",
+    18,
     utils.toWei("10000000"),
+    utils.toWei("1000000000"),
     { from: admin }
   )
 
   mint2 = await MockFRC758.new(
     "Mint2",
     "MNT2",
+    18,
     utils.toWei("10000000"),
+    utils.toWei("1000000000"),
     { from: admin }
   )
 
   mint3 = await MockFRC758.new(
     "Mint3",
     "MNT3",
+    18,
     utils.toWei("10000000"),
+    utils.toWei("1000000000"),
     { from: admin }
   )
 

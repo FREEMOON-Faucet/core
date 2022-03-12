@@ -1,0 +1,86 @@
+[
+  {
+    "lastModificationDate": 1637495624984,
+    "contentHash": "b4bb81458459c1796da7ff9c0fc0cf7f",
+    "sourceName": "contracts/faucet/Faucet.sol",
+    "solcConfig": {
+      "version": "0.8.5",
+      "settings": {
+        "optimizer": {
+          "enabled": true,
+          "runs": 200
+        },
+        "evmVersion": "byzantium",
+        "outputSelection": {
+          "*": {
+            "*": [
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object",
+              "abi",
+              "evm.bytecode.sourceMap",
+              "evm.deployedBytecode.sourceMap",
+              "metadata",
+              "evm.bytecode",
+              "evm.deployedBytecode",
+              "evm.methodIdentifiers"
+            ],
+            "": [
+              "ast"
+            ]
+          }
+        }
+      }
+    },
+    "imports": [
+      "./FaucetStorage.sol"
+    ],
+    "versionPragmas": [
+      "0.8.5"
+    ],
+    "artifacts": [
+      "Faucet"
+    ]
+  },
+  {
+    "lastModificationDate": 1637495624984,
+    "contentHash": "9cabde4f06567a1a3b5ff2d946a1f196",
+    "sourceName": "contracts/faucet/FaucetProxy.sol",
+    "solcConfig": {
+      "version": "0.8.5",
+      "settings": {
+        "optimizer": {
+          "enabled": true,
+          "runs": 200
+        },
+        "evmVersion": "byzantium",
+        "outputSelection": {
+          "*": {
+            "*": [
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object",
+              "abi",
+              "evm.bytecode.sourceMap",
+              "evm.deployedBytecode.sourceMap",
+              "metadata",
+              "evm.bytecode",
+              "evm.deployedBytecode",
+              "evm.methodIdentifiers"
+            ],
+            "": [
+              "ast"
+            ]
+          }
+        }
+      }
+    },
+    "imports": [
+      "./FaucetStorage.sol"
+    ],
+    "versionPragmas": [
+      "0.8.5"
+    ],
+    "artifacts": [
+      "FaucetProxy"
+    ]
+  }
+]

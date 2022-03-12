@@ -171,8 +171,8 @@ contract FRC759 is Context, IFRC759 {
     uint256 private _maxSupply;
     address public fullTimeToken;
 
-    bool internal _paused;
-    bool internal _allowSliceTransfer;
+    bool internal _paused = false;
+    bool internal _allowSliceTransfer = true;
     mapping (address => bool) internal _blockList;
 
     constructor (
