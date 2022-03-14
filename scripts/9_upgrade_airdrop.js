@@ -1,13 +1,14 @@
 
-const AirdropProxy = artifacts.require("AirdropProxy")
-const AirdropLayout = artifacts.require("Airdrop")
+const AirdropProxyV2 = artifacts.require("AirdropProxyV2")
+const AirdropV2Layout = artifacts.require("AirdropV2")
 
 const addresses = require("../addresses")
 
-const AIRDROP_ADDRESS = addresses.mainnet.airdrop
+const AIRDROP_ADDRESS = addresses.mainnet.airdropV2
 
 let admin
-let airdropLayout, airdropProxy
+let airdropV2Layout, airdropProxyV2
+let newAddress
 
 const logDeployed = (msg, addr) => {
   if(addr) console.log(`${msg} ${addr}`)
@@ -16,14 +17,15 @@ const logDeployed = (msg, addr) => {
 
 const upgradeAirdrop = async () => {
   [ admin ] = await web3.eth.getAccounts()
-  airdropProxy = await AirdropProxy.at(AIRDROP_ADDRESS)
+  airdropProxyV2 = await AirdropProxyV2.at(AIRDROP_ADDRESS)
 
   try {
     logDeployed("Deploying new airdrop functional contract ...")
 
-    airdropLayout = await AirdropLayout.new({from: admin})
+    airdropV2Layout = await AirdropV2Layout.new({from: admin})
+    newAddress = airdropV2Layout.address
 
-    logDeployed("New airdrop functional contract deployed:", airdropLayout.address)
+    logDeployed("New airdrop functional contract deployed:", newAddress)
   } catch(err) {
     throw new Error(`Deployment of new airdrop functional contract failed: ${err.message}`)
   }
@@ -31,17 +33,17 @@ const upgradeAirdrop = async () => {
   try {
     logDeployed("Upgrading airdrop contract ...")
 
-    await airdropProxy.upgradeAirdrop(airdropLayout.address, {from: admin})
+    await airdropProxyV2.upgradeAirdrop(newAddress, {from: admin})
 
     logDeployed("Airdrop contract upgraded successfully.")
   } catch(err) {
     throw new Error(`Deployment of new airdrop contract failed: ${err.message}`)
   }
 
-  const NEW_AIRDROP_ADDRESS = await airdropProxy.currentAirdrop()
+  const NEW_AIRDROP_ADDRESS = await airdropProxyV2.currentAirdrop()
 
   console.log(`
-    New deployed address: ${airdropLayout.address},
+    New deployed address: ${newAddress},
     New address set in airdrop: ${NEW_AIRDROP_ADDRESS},
     - They should be the same.
   `)

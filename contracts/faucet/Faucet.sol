@@ -245,4 +245,14 @@ contract Faucet is FaucetStorage {
             }
         }
     }
+
+    /**
+     * @notice Update current governance address.
+     *
+     * @param _newGov The new governance address.
+    */
+    function setGovernance(address _newGov) public {
+        require(msg.sender == governance, "FREEMOON: Only the governance address can perform this operation.");
+        governance = _newGov;
+    }
 }

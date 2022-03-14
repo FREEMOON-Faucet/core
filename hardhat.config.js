@@ -109,13 +109,13 @@ module.exports = {
     //   chainId: 46688,
     //   accounts: [ process.env.ADMIN_PK, process.env.HH_C_PK, process.env.HH_G_PK ]
     // },
-    // fsnMainnet: {
-    //  url: "https://mainway.freemoon.xyz/gate",
-    //  chainId: 32659,
-    //  accounts: [ process.env.ADMIN_PRIVATE ],
-    //  gas: 8000000,
-    //  gasPrice: 10000000000
-    // },
+    fsnMainnet: {
+     url: "https://mainway.freemoon.xyz/gate",
+     chainId: 32659,
+     accounts: [ process.env.ADMIN_PRIVATE ],
+     gas: 8000000,
+     gasPrice: 10000000000
+    },
     // bscTestnet: {
     //   url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
     //   chainId: 97,

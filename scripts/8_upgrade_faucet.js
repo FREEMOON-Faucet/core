@@ -2,10 +2,11 @@
 const FaucetProxy = artifacts.require("FaucetProxy")
 const FaucetLayout = artifacts.require("Faucet")
 
-const FAUCET_ADDRESS = addresses.testnet.faucet
+const FAUCET_ADDRESS = require("../addresses").mainnet.faucet
 
 let admin
 let faucetLayout, faucetProxy
+let newAddress
 
 const logDeployed = (msg, addr) => {
   if(addr) console.log(`${msg} ${addr}`)
@@ -20,6 +21,7 @@ const upgradeFaucet = async () => {
     logDeployed("Deploying new faucet functional contract ...")
 
     faucetLayout = await FaucetLayout.new({from: admin})
+    newAddress = faucetLayout.address
 
     logDeployed("New faucet functional contract deployed:", faucetLayout.address)
   } catch(err) {
@@ -29,7 +31,8 @@ const upgradeFaucet = async () => {
   try {
     logDeployed("Upgrading faucet contract ...")
 
-    await faucetProxy.upgradeFaucet(faucetLayout.address, {from: admin})
+    // newAddress = "0x64Eec18DD5c6512a39dF3d9489910968648a68B4"
+    await faucetProxy.upgradeFaucet(newAddress, {from: admin})
 
     logDeployed("Faucet contract upgraded successfully.")
   } catch(err) {
@@ -39,7 +42,7 @@ const upgradeFaucet = async () => {
   const NEW_FAUCET_ADDRESS = await faucetProxy.currentFaucet()
 
   console.log(`
-    New deployed address: ${faucetLayout.address},
+    New deployed address: ${newAddress},
     New address set in faucet: ${NEW_FAUCET_ADDRESS},
     - They should be the same.
   `)
