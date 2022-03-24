@@ -16,6 +16,7 @@ const logDeployed = (msg, addr) => {
 }
 
 const upgradeAirdrop = async () => {
+
   [ admin ] = await web3.eth.getAccounts()
   airdropProxyV2 = await AirdropProxyV2.at(AIRDROP_ADDRESS)
 

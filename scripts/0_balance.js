@@ -2,8 +2,8 @@
 const FMN = artifacts.require("FMN")
 const addresses = require("../addresses")
 
-const FMN_ADDRESS = addresses.mainnet.fmn
-const CHECK_ADDR = ""
+const FMN_ADDRESS = addresses.mainnet.oldFmn
+const CHECK_ADDR = "0x9867951c59b3506051748336a29be1ff919f157e"
 
 
 const check = async () => {
