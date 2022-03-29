@@ -31,7 +31,6 @@ const upgradeFaucet = async () => {
   try {
     logDeployed("Upgrading faucet contract ...")
 
-    // newAddress = "0x64Eec18DD5c6512a39dF3d9489910968648a68B4"
     await faucetProxy.upgradeFaucet(newAddress, {from: admin})
 
     logDeployed("Faucet contract upgraded successfully.")

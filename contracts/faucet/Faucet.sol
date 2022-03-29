@@ -255,4 +255,24 @@ contract Faucet is FaucetStorage {
         require(msg.sender == governance, "FREEMOON: Only the governance address can perform this operation.");
         governance = _newGov;
     }
+
+    /**
+     * @notice Upgrade the tokens that get minted.
+     *
+     * @param _free The new FREE address.
+     * @param _fmn The new FMN address.
+    */
+    function upgradeTokens(address _free, address _fmn) public {
+        require(msg.sender == admin, "FREEMOON: Only the admin address can perform this operation.");
+        free = IFREE(_free);
+        fmn = IFMN(_fmn);
+    }
+
+    function getFree() public view returns(address) {
+        return address(free);
+    }
+
+    function getFmn() public view returns(address) {
+        return address(fmn);
+    }
 }
