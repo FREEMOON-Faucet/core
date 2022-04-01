@@ -10,13 +10,13 @@ const mintFmn = async () => {
 
   const fmn = await Fmn.at(fmnAddr)
 
-  const MINT_AMOUNT = web3.utils.toWei("3.25", "ether")
-  const MINT_TO = "0xB110b5D29bB920Ae7A6F0e06615177f24B79d5cb"
+  const MINT_AMOUNT = web3.utils.toWei("", "ether")
+  const MINT_TO = ""
 
   console.log(`Minting ${ web3.utils.fromWei(MINT_AMOUNT) } FMN to address ${ MINT_TO } ...`)
 
   const balanceBefore = web3.utils.fromWei(await fmn.balanceOf(MINT_TO))
-  console.log(`Initial balance of receiver: ${ balanceBefore }`)
+  console.log(`Initial balance of receiver: ${ balanceBefore } FMN`)
 
   try {
     // await fmn.mint(MINT_TO, MINT_AMOUNT, { from: admin })

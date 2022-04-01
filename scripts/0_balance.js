@@ -1,18 +1,31 @@
 
-const FMN = artifacts.require("FMN")
+const Free = artifacts.require("FREE")
+const Fmn = artifacts.require("FMN")
+const { web3 } = require("hardhat")
 const addresses = require("../addresses")
 
-const FMN_ADDRESS = addresses.mainnet.oldFmn
-const CHECK_ADDR = "0x9867951c59b3506051748336a29be1ff919f157e"
+const freeAddr = addresses.mainnet.free
+const fmnAddr = addresses.mainnet.fmn
+const checkAddr = "0x482cdCbdd72ef307997153Ee7eb627B7a2348d34"
 
 
-const check = async () => {
-  const fmn = await FMN.at(FMN_ADDRESS)
+const balance = async () => {
+  const free = await Free.at(freeAddr)
+  const fmn = await Fmn.at(fmnAddr)
 
-  const bal = await fmn.balanceOf(CHECK_ADDR)
-  const balFmn = web3.utils.fromWei(bal)
+  const fsnBalWei = await web3.eth.getBalance(checkAddr)
+  const fsnBal = web3.utils.fromWei(fsnBalWei)
 
-  console.log(`FMN balance of ${ CHECK_ADDR } : ${ balFmn }`)
+  const freeBalWei = await free.balanceOf(checkAddr)
+  const freeBal = web3.utils.fromWei(freeBalWei)
+  const fmnBalWei = await fmn.balanceOf(checkAddr)
+  const fmnBal = web3.utils.fromWei(fmnBalWei)
+
+  console.log(`\nFor address ${ checkAddr }:
+  `)
+  console.log(`FSN:    ${ fsnBal }`)
+  console.log(`FREE:   ${ freeBal }`)
+  console.log(`FMN:    ${ fmnBal }`)
 }
 
-check()
+balance()
