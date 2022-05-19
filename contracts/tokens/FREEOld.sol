@@ -10,7 +10,7 @@ import "../FRC758/FRC758.sol";
  *
  * @notice FREE is an FRC758 standard token.
  */
-contract FREE is FRC758 {
+contract FREEOld is FRC758 {
 
     uint256 immutable TO_WEI;
     uint256 constant INITIAL_SUPPLY = 100000000; // One Hundred Million

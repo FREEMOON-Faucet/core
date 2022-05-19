@@ -128,6 +128,10 @@ module.exports = {
     //   gas: 8000000,
     //   gasPrice: 2000000000
     // }
+    ftmMainnet: {
+      url: "https://rpcapi.fantom.network/",
+      chainId: 250,
+    }
   },
   mocha: {
     timeout: 600000

@@ -1,20 +1,21 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.5;
+ // SPDX-License-Identifier: GPL-3.0-or-later
+pragma solidity 0.8.12;
 
-import "../FRC758/FRC758.sol";
+import "../FRC759/FRC759.sol";
 
 /**
  * @title The FREEMOON Token contract
  *
- * @author @paddyc1
+ * @author @marcelcure
  *
- * @notice FREEMOON is an FRC758 standard token.
+ * @notice FREEMOON is an FRC759 standard token.
  */
-contract FMNOld is FRC758 {
+contract FMNOld is FRC759 {
 
     uint256 immutable TO_WEI;
     uint256 constant INITIAL_SUPPLY = 10;
     uint256 constant LIMIT = 1000;
+    uint256 constant _totalSupply = LIMIT * 10 ** 18;
     uint256 public circulationSupply;
     address public admin;
     address public governance;
@@ -39,12 +40,12 @@ contract FMNOld is FRC758 {
      * @param _admin The admin address, used to manage deployment.
      * @param _governance The governance address, used to vote for upgrading the faucet address.
      */
-    constructor(string memory _name, string memory _symbol, uint256 _decimals, address _admin, address _governance) FRC758(_name, _symbol, _decimals) {
+    constructor(string memory _name, string memory _symbol, uint256 _decimals, address _admin, address _governance) FRC759(_name, _symbol, uint8(_decimals), _totalSupply) {
         admin = _admin;
         governance = _governance;
         TO_WEI = 10 ** _decimals;
         circulationSupply += INITIAL_SUPPLY * 10 ** _decimals;
-        totalSupply = LIMIT * 10 ** _decimals;
+        //totalSupply = LIMIT * 10 ** _decimals;
     }
 
     /**
@@ -78,7 +79,7 @@ contract FMNOld is FRC758 {
      */
     function rewardWinner(address _winner, uint8 _lottery) external {
         require(msg.sender == faucet, "FREEMOON: Only faucet has minting privileges.");
-        require((circulationSupply + 1 * TO_WEI) <= totalSupply, "FREEMOON: Cannot mint more tokens.");
+        require((circulationSupply + 1 * TO_WEI) <= _totalSupply, "FREEMOON: Cannot mint more tokens.");
 
         circulationSupply += 1 * TO_WEI;
         _mint(_winner, 1 * TO_WEI);
@@ -108,14 +109,14 @@ contract FMNOld is FRC758 {
         _burnSlice(_account, _amount, _tokenStart, _tokenEnd);
     }
 
-    function transfer(address _recipient, uint256 _amount) public returns(bool) {
-        transferFrom(msg.sender, _recipient, _amount);
-        return true;
-    }
+    // function transfer(address _recipient, uint256 _amount) public returns(bool) {
+    //     transferFrom(msg.sender, _recipient, _amount);
+    //     return true;
+    // }
 
-    function balanceOf(address _account) public view returns(uint256) {
-        return timeBalanceOf(_account, block.timestamp, MAX_TIME) + balance[_account];
-    }
+    // function balanceOf(address _account) public view returns(uint256) {
+    //     return timeBalanceOf(_account, block.timestamp, MAX_TIME) + balance[_account];
+    // }
 
     function onTimeSlicedTokenReceived(address _operator, address _from, uint256 amount, uint256 newTokenStart, uint256 newTokenEnd) public pure returns(bytes4) {
         _operator = address(0);
@@ -126,8 +127,8 @@ contract FMNOld is FRC758 {
         return bytes4(keccak256("onTimeSlicedTokenReceived(address,address,uint256,uint256,uint256)"));
     }
 
-    function clean(address from, uint256 tokenStart, uint256 tokenEnd) public {
-        require(msg.sender == from);
-        _clean(from, tokenStart, tokenEnd);
-    }
+    // function clean(address from, uint256 tokenStart, uint256 tokenEnd) public {
+    //     require(msg.sender == from);
+    //     _clean(from, tokenStart, tokenEnd);
+    // }
 }
